@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="color-scheme" content="light only">
+  <title>배민 라이더 체험</title>
+  <meta property="og:title" content="배민 라이더 체험">
+  <meta property="og:description" content="엠봇과 함께하는 AI 배달 체험! 직접 라이더가 되어보세요 🚀">
+  <meta property="og:image" content="og.png">
+  <meta property="og:type" content="website">
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+    :root { color-scheme: light; }
+    @media (prefers-color-scheme: dark) {
+      html, body, .screen, .bottom-sheet, .top-bar, .info-card,
+      .rest-item, .menu-card, .time-card, .ai-card, .order-route,
+      .detail-top, .detail-body, #selectScreen, #doneScreen, #detailScreen {
+        background-color: #fff !important;
+        color: #222 !important;
+      }
+      body { background: #f4f4f4 !important; }
+      .screen.map-screen { background-color: transparent !important; }
+      #qrScreen, #photoScreen { background-color: #111 !important; }
+      .select-header, .done-top { background-color: #00c4b4 !important; }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'Noto Sans KR', sans-serif; background: #f4f4f4; color: #222; min-height: 100vh; overflow-x: hidden; }
+
+    .screen { display: none; min-height: 100vh; flex-direction: column; position: relative; background:#fff; }
+    .screen.active { display: flex; }
+    .screen.map-screen { background: transparent !important; }
+
+    /* 지도 배경 */
+    .map-bg {
+      position: fixed; inset: 0; z-index: 0;
+      background: #e8e0d5;
+      background-image:
+        linear-gradient(#d4c9b8 1px, transparent 1px),
+        linear-gradient(90deg, #d4c9b8 1px, transparent 1px),
+        linear-gradient(#ddd6c8 1px, transparent 1px),
+        linear-gradient(90deg, #ddd6c8 1px, transparent 1px);
+      background-size: 80px 80px, 80px 80px, 16px 16px, 16px 16px;
+    }
+    .map-road-h { position: fixed; left:0; right:0; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+    .map-road-v { position: fixed; top:0; bottom:0; background: #fff; box-shadow: 1px 0 4px rgba(0,0,0,0.1); }
+
+    /* 지도 위 고정 라이더 */
+    #mapRider {
+      position: fixed; left: 50%; top: 18%;
+      transform: translate(-50%,-50%);
+      z-index: 5; text-align: center; pointer-events: none;
+      display: none;
+      animation: floatRider 2.5s ease-in-out infinite;
+    }
+    #mapRider.moving {
+      animation: rideAround 6s ease-in-out infinite;
+    }
+    @keyframes floatRider {
+      0%,100% { transform: translate(-50%,-50%) translateY(0); }
+      50%      { transform: translate(-50%,-50%) translateY(-10px); }
+    }
+    @keyframes rideAround {
+      0%   { transform: translate(-50%,-50%) translate(0,0); }
+      20%  { transform: translate(-50%,-50%) translate(55px,-30px); }
+      40%  { transform: translate(-50%,-50%) translate(25px, 25px); }
+      60%  { transform: translate(-50%,-50%) translate(-50px,-15px); }
+      80%  { transform: translate(-50%,-50%) translate(-20px, 28px); }
+      100% { transform: translate(-50%,-50%) translate(0,0); }
+    }
+    .map-rider-fig {
+      width: 72px; height: 72px; background: #fff; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; font-size: 2.4rem;
+      margin: 0 auto; box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    }
+    .map-rider-shadow {
+      width: 26px; height: 7px; background: rgba(0,0,0,0.12); border-radius: 50%;
+      margin: 6px auto 0;
+    }
+
+    /* 공통 상단 바 */
+    .top-bar {
+      position: relative; z-index: 10;
+      background: #fff; padding: 12px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+    }
+    .rider-name { font-size: 0.82rem; font-weight: 700; color: #222; }
+    .rider-name span { color: #00c4b4; }
+    .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+    .toggle-label { font-size: 0.75rem; color: #555; font-weight: 700; }
+    .toggle { width: 44px; height: 24px; background: #00c4b4; border-radius: 12px; position: relative; }
+    .toggle::after { content: ''; position: absolute; top: 2px; left: 22px; width: 20px; height: 20px; background: #fff; border-radius: 50%; }
+
+    /* 바텀시트 */
+    .bottom-sheet {
+      position: relative; z-index: 20; width: 100%;
+      background: #fff; border-radius: 20px 20px 0 0;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+      padding: 16px 20px 40px;
+    }
+    .sheet-handle { width: 40px; height: 4px; background: #ddd; border-radius: 2px; margin: 0 auto 16px; }
+    .map-float { flex:1; position:relative; z-index:1; display:flex; align-items:flex-end; }
+
+    /* 공통 버튼 */
+    .btn-teal { width:100%; background:#00c4b4; color:#fff; border:none; padding:16px; border-radius:12px; font-size:1.05rem; font-weight:900; cursor:pointer; font-family:inherit; }
+    .btn-teal:active { opacity:0.85; }
+    .btn-outline { flex:1; background:none; border:2px solid #ddd; color:#888; padding:14px; border-radius:12px; font-size:0.9rem; font-weight:700; cursor:pointer; font-family:inherit; }
+    .btn-sub { flex:1; background:none; border:2px solid #eee; color:#555; padding:14px; border-radius:12px; font-size:0.85rem; font-weight:700; cursor:pointer; font-family:inherit; }
+    .btn-main { flex:2; background:#222; color:#fff; border:none; padding:14px; border-radius:12px; font-size:0.88rem; font-weight:900; cursor:pointer; font-family:inherit; }
+    .two-btn-row { display:flex; gap:10px; }
+
+    /* ══ ① 식당 선택 ══ */
+    #selectScreen { background:#fff; }
+    .select-header { background:#00c4b4; padding:28px 20px 24px; color:#fff; text-align:center; }
+    .select-header .logo { font-size:1.9rem; font-weight:900; letter-spacing:-1px; }
+    .select-header .sub { font-size:0.85rem; opacity:0.8; margin-top:4px; }
+    .select-body { padding:20px; }
+    .select-title { font-size:1.1rem; font-weight:900; margin-bottom:4px; }
+    .select-sub { font-size:0.8rem; color:#888; margin-bottom:20px; }
+    .rest-list { display:flex; flex-direction:column; gap:10px; }
+    .rest-item { border:2px solid #eee; border-radius:14px; padding:16px; display:flex; align-items:center; gap:14px; cursor:pointer; transition:all 0.15s; }
+    .rest-item:active { border-color:#00c4b4; background:#f0fffe; transform:scale(0.98); }
+    .ri-emoji { font-size:2.2rem; }
+    .ri-name { font-size:1rem; font-weight:900; }
+    .ri-items { font-size:0.72rem; color:#aaa; margin-top:3px; }
+
+    /* ══ ② 운행 시작 ══ */
+    .rider-map-area { flex:1; position:relative; z-index:1; display:flex; align-items:center; justify-content:center; }
+    .start-rider-char { text-align:center; animation:floatRider 2.5s ease-in-out infinite; }
+    .start-rider-fig { width:86px; height:86px; background:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:3rem; margin:0 auto; box-shadow:0 4px 20px rgba(0,0,0,0.18); }
+    .start-rider-shadow { width:30px; height:8px; background:rgba(0,0,0,0.12); border-radius:50%; margin:8px auto 0; }
+    .start-rider-label { background:#fff; border-radius:100px; padding:6px 14px; font-size:0.8rem; font-weight:900; color:#222; margin-top:10px; box-shadow:0 2px 10px rgba(0,0,0,0.1); display:inline-block; }
+    .start-rider-label span { color:#00c4b4; }
+    .helmet-notice { background:#fff9e6; border:1px solid #ffe082; border-radius:12px; padding:14px 16px; display:flex; align-items:flex-start; gap:10px; margin-bottom:20px; }
+    .helmet-icon { font-size:1.6rem; flex-shrink:0; }
+    .helmet-text { font-size:0.82rem; color:#555; line-height:1.6; }
+    .helmet-text strong { color:#222; display:block; margin-bottom:2px; }
+    .start-name { font-size:1.3rem; font-weight:900; margin-bottom:4px; }
+    .start-name span { color:#00c4b4; }
+    .start-sub { font-size:0.82rem; color:#888; margin-bottom:24px; }
+
+    /* ══ ③ 배차 대기 ══ */
+    .wait-status { text-align:center; padding:20px 0; }
+    .wait-icon { font-size:3rem; animation:pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+    .wait-text { font-size:1rem; font-weight:700; margin-top:12px; }
+    .wait-sub { font-size:0.78rem; color:#aaa; margin-top:4px; }
+    .rest-chip { background:#f4f4f4; border-radius:100px; padding:8px 16px; font-size:0.82rem; font-weight:700; color:#555; display:inline-block; margin:12px 0 20px; }
+    .btn-ai { width:100%; background:#00c4b4; color:#fff; border:none; padding:16px; border-radius:12px; font-size:1rem; font-weight:900; cursor:pointer; font-family:inherit; }
+    .btn-ai:active { opacity:0.85; }
+
+    /* ══ ④ AI 분석 ══ */
+    .ai-analyze { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 20px; position:relative; z-index:1; }
+    .ai-bot { font-size:4.5rem; animation:botBounce 0.6s ease-in-out infinite alternate; }
+    @keyframes botBounce { from{transform:translateY(0)} to{transform:translateY(-10px)} }
+    .ai-title { font-size:1.2rem; font-weight:900; margin-top:20px; }
+    .ai-sub { font-size:0.82rem; color:#aaa; margin-top:6px; }
+    .ai-bar-wrap { width:80%; background:#eee; border-radius:100px; height:6px; margin-top:24px; overflow:hidden; }
+    .ai-bar { height:100%; background:#00c4b4; border-radius:100px; width:0; }
+    .ai-step { margin-top:16px; font-size:0.78rem; color:#aaa; text-align:center; }
+
+    /* ══ ⑤ 신규 배차 ══ */
+    .new-badge { background:#00c4b4; color:#fff; font-size:0.7rem; font-weight:900; padding:4px 10px; border-radius:4px; letter-spacing:1px; display:inline-block; margin-bottom:12px; }
+    .order-route { background:#f8f8f8; border-radius:12px; padding:14px 16px; margin-bottom:12px; }
+    .route-row { display:flex; align-items:center; gap:10px; padding:6px 0; }
+    .route-row+.route-row { border-top:1px dashed #eee; }
+    .dot-pick { width:10px; height:10px; border-radius:50%; background:#00c4b4; flex-shrink:0; }
+    .dot-dest { width:10px; height:10px; border-radius:50%; background:#ff6b6b; flex-shrink:0; }
+    .route-lbl { font-size:0.68rem; color:#aaa; width:28px; }
+    .route-nm { font-size:0.9rem; font-weight:900; }
+    .route-ad { font-size:0.72rem; color:#aaa; margin-top:1px; }
+    .menu-prev { font-size:0.75rem; color:#aaa; margin-bottom:14px; }
+    .order-btns { display:flex; gap:10px; }
+    .btn-accept { flex:2; background:#00c4b4; color:#fff; border:none; padding:14px; border-radius:12px; cursor:pointer; font-family:inherit; display:flex; flex-direction:column; align-items:center; }
+    .accept-main { font-size:1rem; font-weight:900; }
+    .accept-timer { font-size:0.72rem; opacity:0.85; margin-top:2px; }
+
+    /* ══ ⑥ 픽업 이동 ══ */
+    .dir-label { font-size:0.72rem; color:#aaa; font-weight:700; letter-spacing:0.5px; margin-bottom:6px; }
+    .place-nm { font-size:1.4rem; font-weight:900; margin-bottom:16px; }
+    .tip-box { background:#fff9e6; border-radius:10px; padding:12px 14px; font-size:0.78rem; color:#555; line-height:1.7; margin-bottom:16px; }
+    .tip-box strong { color:#222; }
+    /* 픽업 바텀시트 가독성 강화 */
+    .pickup-dir-badge { display:inline-flex; align-items:center; gap:6px; background:#00c4b4; color:#fff; font-size:0.78rem; font-weight:900; padding:6px 14px; border-radius:100px; margin-bottom:12px; }
+    .pickup-store-nm { font-size:2rem; font-weight:900; color:#222; margin-bottom:8px; line-height:1.2; }
+    .pickup-menu-badge { display:inline-block; background:#f0fffe; border:1.5px solid #00c4b4; color:#00c4b4; font-size:0.88rem; font-weight:900; padding:6px 16px; border-radius:100px; margin-bottom:16px; }
+    /* ⑤ 배차 수락 미니 메뉴 */
+    .order-menu-mini { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+    .mini-menu-item { display:flex; flex-direction:column; align-items:center; gap:4px; }
+    .mini-menu-img { width:52px; height:52px; border-radius:50%; background-image:url('food.png'); background-size:500% 400%; background-repeat:no-repeat; border:2px solid #eee; }
+    .mini-menu-nm { font-size:0.65rem; font-weight:700; color:#555; text-align:center; }
+    /* ⑦ 체크리스트 */
+    .checklist-progress { font-size:0.78rem; color:#00c4b4; font-weight:700; margin-left:8px; }
+    .btn-qr-big { width:100%; background:#222; color:#fff; border:none; padding:18px; border-radius:12px; font-size:1.05rem; font-weight:900; cursor:pointer; font-family:inherit; margin-top:8px; display:none; }
+    .btn-qr-big.show { display:block; }
+    /* 체크리스트 리스트형 */
+    .checklist-list { display:flex; flex-direction:column; gap:8px; }
+    .check-row { display:flex; align-items:center; gap:12px; padding:10px 12px; border:2px solid #eee; border-radius:14px; cursor:pointer; transition:all 0.15s; background:#fff; -webkit-tap-highlight-color:transparent; }
+    .check-row:active { transform:scale(0.98); }
+    .check-row.checked { border-color:#00c4b4; background:#f0fffe; }
+    .check-row-img { width:56px; height:56px; border-radius:50%; background-image:url('food.png'); background-size:500% 400%; background-repeat:no-repeat; flex-shrink:0; }
+    .check-row-info { flex:1; }
+    .check-row-name { font-size:1rem; font-weight:900; color:#222; }
+    .check-row-price { font-size:0.8rem; color:#aaa; margin-top:2px; }
+    .check-row-box { width:28px; height:28px; border-radius:50%; border:2px solid #ddd; display:flex; align-items:center; justify-content:center; font-size:0.9rem; color:transparent; flex-shrink:0; transition:all 0.15s; }
+    .check-row.checked .check-row-box { background:#00c4b4; border-color:#00c4b4; color:#fff; }
+    /* 스크롤 바텀시트 */
+    .bottom-sheet-scroll { max-height:72vh; overflow-y:auto; }
+
+    /* ══ ⑦ 배달 상세 ══ */
+    #detailScreen { background:#f4f4f4; }
+    .detail-top { background:#fff; padding:16px 20px; border-bottom:1px solid #eee; }
+    .detail-addr { font-size:1.1rem; font-weight:900; }
+    .detail-floor { font-size:0.78rem; color:#aaa; margin-top:2px; }
+    .detail-body { padding:12px 16px; flex:1; overflow-y:auto; }
+    .info-card { background:#fff; border-radius:12px; padding:16px; margin-bottom:10px; }
+    .card-title { font-size:0.72rem; color:#aaa; font-weight:700; letter-spacing:0.5px; margin-bottom:10px; }
+    .call-btn { width:100%; background:#f4f4f4; border:none; border-radius:10px; padding:12px; font-size:0.88rem; font-weight:700; color:#222; cursor:pointer; font-family:inherit; margin-top:10px; }
+    .o-num { font-size:0.82rem; color:#aaa; }
+    .o-store { font-size:1rem; font-weight:900; margin:4px 0; }
+    .o-item { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #f4f4f4; }
+    .o-item:last-child { border:none; }
+    .o-item-name { font-size:0.82rem; color:#555; flex:1; }
+    .o-item-price { font-size:0.82rem; font-weight:700; }
+    .o-total { display:flex; justify-content:space-between; margin-top:10px; padding-top:10px; border-top:2px solid #eee; }
+    .o-total-lbl { font-size:0.88rem; font-weight:700; }
+    .o-total-price { font-size:0.88rem; font-weight:900; color:#00c4b4; }
+    .c-req { font-size:0.82rem; color:#555; line-height:1.7; }
+    .detail-btns { padding:12px 16px 32px; }
+    .btn-qr { width:100%; background:#222; color:#fff; border:none; padding:16px; border-radius:12px; font-size:1rem; font-weight:900; cursor:pointer; font-family:inherit; margin-top:8px; display:none; }
+    .btn-qr.show { display:block; }
+
+    /* ══ ⑧ QR 스캔 ══ */
+    #qrScreen { background:#111; }
+    .qr-top { padding:20px; color:#fff; text-align:center; }
+    .qr-top h2 { font-size:1rem; font-weight:900; }
+    .qr-top p { font-size:0.78rem; color:#aaa; margin-top:4px; }
+    .qr-wrap { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0 20px; }
+    #qr-reader { width:100%; max-width:320px; }
+    #qr-reader video { border-radius:12px; }
+    .qr-guide { color:#aaa; font-size:0.78rem; margin-top:12px; text-align:center; }
+    .qr-bottom { padding:16px 20px 32px; }
+    .btn-qr-manual { width:100%; background:none; border:2px solid #555; color:#aaa; padding:14px; border-radius:12px; font-size:0.88rem; font-weight:700; cursor:pointer; font-family:inherit; }
+
+    /* ══ ⑨ 전달지 이동 ══ */
+    .elapsed { font-size:0.82rem; color:#aaa; margin-bottom:16px; }
+    .elapsed strong { color:#222; font-size:1.1rem; font-variant-numeric:tabular-nums; }
+
+    /* ══ ⑩ 사진 촬영 ══ */
+    #photoScreen { background:#000; flex-direction:column; }
+    .photo-top { background:#111; padding:16px 20px; color:#fff; text-align:center; flex-shrink:0; }
+    .photo-top h2 { font-size:1rem; font-weight:900; }
+    .photo-top p  { font-size:0.78rem; color:#aaa; margin-top:4px; }
+    .photo-view { flex:1; background:#000; position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+    #cameraVideo { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:none; }
+    #photoPreview { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:none; }
+    #photoLoading { color:#555; text-align:center; z-index:1; }
+    #photoLoading .cam-icon { font-size:3.5rem; }
+    #photoLoading p { font-size:0.82rem; margin-top:8px; }
+    /* 셔터 바 */
+    .photo-shutter { background:#111; padding:20px 20px 32px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .btn-shutter {
+      width:72px; height:72px; border-radius:50%;
+      background:#fff; border:none; cursor:pointer;
+      box-shadow: 0 0 0 4px #111, 0 0 0 6px #555;
+      font-size:1.6rem; display:flex; align-items:center; justify-content:center;
+    }
+    .btn-shutter:active { transform:scale(0.93); }
+    /* 전송 바 */
+    .photo-send-bar { background:#111; padding:16px 20px 32px; display:flex; gap:12px; flex-shrink:0; }
+    .btn-retake { flex:1; background:none; border:2px solid #555; color:#fff; padding:14px; border-radius:12px; font-size:0.88rem; font-weight:700; cursor:pointer; font-family:inherit; }
+    .btn-send   { flex:2; background:#00c4b4; color:#fff; border:none; padding:14px; border-radius:12px; font-size:0.88rem; font-weight:900; cursor:pointer; font-family:inherit; }
+
+    /* ══ ⑪ 완료 ══ */
+    #doneScreen { background:#fff; }
+    .done-top { background:#00c4b4; padding:44px 24px 36px; text-align:center; color:#fff; }
+    .done-emoji { font-size:4rem; margin-bottom:12px; }
+    .done-top h1 { font-size:1.6rem; font-weight:900; }
+    .done-top p  { font-size:0.85rem; opacity:0.85; margin-top:6px; line-height:1.6; }
+    .done-body { padding:24px 20px; }
+    .time-card { background:#f8f8f8; border-radius:14px; padding:24px; margin-bottom:16px; text-align:center; }
+    .time-label { font-size:0.75rem; color:#aaa; font-weight:700; letter-spacing:0.5px; }
+    .time-value { font-size:3rem; font-weight:900; color:#00c4b4; margin-top:6px; line-height:1; }
+    .time-unit  { font-size:0.78rem; color:#aaa; margin-top:6px; }
+    .ai-card { background:#f4f4f4; border-radius:12px; padding:14px 16px; margin-bottom:20px; }
+    .ai-card-lbl { font-size:0.68rem; color:#00c4b4; font-weight:900; letter-spacing:0.5px; }
+    .ai-card-txt { font-size:0.82rem; color:#555; margin-top:4px; line-height:1.5; }
+
+    /* ══ 픽업 메뉴 체크리스트 ══ */
+    .pickup-body { padding:20px; overflow-y:auto; flex:1; }
+    .pickup-dest-lbl { font-size:0.75rem; color:#aaa; font-weight:700; letter-spacing:0.5px; margin-bottom:6px; }
+    .pickup-dest { font-size:1.6rem; font-weight:900; margin-bottom:4px; }
+    .pickup-count { font-size:0.88rem; color:#555; font-weight:700; margin-bottom:14px; }
+    .pickup-count span { color:#00c4b4; font-size:1.1rem; font-weight:900; }
+    .menu-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(88px,1fr)); gap:10px; margin-bottom:18px; }
+    .menu-card {
+      border:2.5px solid #eee; border-radius:16px; padding:14px 8px 12px;
+      display:flex; flex-direction:column; align-items:center; gap:6px;
+      cursor:pointer; transition:all 0.15s; background:#fff; user-select:none;
+      -webkit-tap-highlight-color:transparent; min-height:110px; justify-content:center;
+    }
+    .menu-card:active { transform:scale(0.94); }
+    .menu-card.checked { border-color:#00c4b4; background:#f0fffe; }
+    .menu-card-emoji { font-size:2.4rem; line-height:1; }
+    .menu-card-img {
+      width:72px; height:72px; border-radius:50%;
+      background-image: url('food.png');
+      background-size: 500% 400%;
+      background-repeat: no-repeat;
+      flex-shrink:0;
+    }
+    .menu-card-name { font-size:0.82rem; font-weight:900; color:#333; text-align:center; word-break:keep-all; }
+    .menu-card-check { width:22px; height:22px; border-radius:50%; border:2px solid #ddd; display:flex; align-items:center; justify-content:center; font-size:0.72rem; transition:all 0.15s; color:transparent; }
+    .menu-card.checked .menu-card-check { background:#00c4b4; border-color:#00c4b4; color:#fff; }
+
+    /* ══ 전달지 화면 개선 ══ */
+    .deliver-label { font-size:0.75rem; color:#aaa; font-weight:700; letter-spacing:0.5px; margin-bottom:6px; }
+    .deliver-dest { font-size:1.7rem; font-weight:900; margin-bottom:2px; }
+    .deliver-dest-sub { font-size:0.82rem; color:#aaa; margin-bottom:16px; }
+    .deliver-timer-wrap { background:#f8f8f8; border-radius:14px; padding:16px; text-align:center; margin-bottom:16px; }
+    .deliver-timer-lbl { font-size:0.72rem; color:#aaa; font-weight:700; letter-spacing:0.5px; }
+    .deliver-timer-big { font-size:3.2rem; font-weight:900; color:#222; font-variant-numeric:tabular-nums; line-height:1; margin-top:6px; }
+    .deliver-menu-summary { background:#f0fffe; border:1.5px solid #b2ede7; border-radius:12px; padding:12px 14px; margin-bottom:16px; }
+    .deliver-menu-lbl { font-size:0.68rem; color:#00c4b4; font-weight:900; letter-spacing:0.5px; margin-bottom:8px; }
+    .deliver-menu-chips { display:flex; flex-wrap:wrap; gap:6px; }
+    .deliver-chip { background:#fff; border:1.5px solid #00c4b4; border-radius:100px; padding:5px 12px; font-size:0.85rem; font-weight:700; color:#333; display:flex; align-items:center; gap:4px; }
+  </style>
+</head>
+<body>
+
+<!-- 인앱 브라우저 경고 오버레이 -->
+<div id="inAppWarning" style="display:none;position:fixed;inset:0;background:#111;z-index:9999;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center;">
+  <div style="font-size:3rem;margin-bottom:16px;">📵</div>
+  <div style="color:#fff;font-size:1.15rem;font-weight:900;margin-bottom:10px;">카메라가 작동하지 않아요</div>
+  <div style="color:#aaa;font-size:0.85rem;line-height:1.9;margin-bottom:28px;">카카오톡 내장 브라우저에서는<br>카메라 기능을 사용할 수 없어요.<br><br><strong style="color:#fff;">아래 방법으로 다시 열어주세요!</strong></div>
+  <div style="background:#1e1e1e;border-radius:14px;padding:18px 20px;width:100%;text-align:left;margin-bottom:12px;">
+    <div style="color:#00c4b4;font-size:0.72rem;font-weight:900;letter-spacing:1px;margin-bottom:10px;">🤖 안드로이드</div>
+    <div style="color:#ccc;font-size:0.87rem;line-height:2;">화면 아래 <strong style="color:#fff;">⋮ 버튼</strong> 탭<br>→ <strong style="color:#fff;">다른 앱으로 열기</strong><br>→ <strong style="color:#00c4b4;">Chrome</strong> 선택</div>
+  </div>
+  <div style="background:#1e1e1e;border-radius:14px;padding:18px 20px;width:100%;text-align:left;">
+    <div style="color:#00c4b4;font-size:0.72rem;font-weight:900;letter-spacing:1px;margin-bottom:10px;">🍎 아이폰</div>
+    <div style="color:#ccc;font-size:0.87rem;line-height:2;">화면 하단 <strong style="color:#fff;">공유(↑) 버튼</strong> 탭<br>→ <strong style="color:#00c4b4;">Safari로 열기</strong> 선택</div>
+  </div>
+</div>
+
+<!-- 지도 배경 -->
+<div class="map-bg"></div>
+<div class="map-road-h" style="top:35%;height:36px"></div>
+<div class="map-road-h" style="top:62%;height:24px"></div>
+<div class="map-road-v" style="left:28%;width:30px"></div>
+<div class="map-road-v" style="left:72%;width:20px"></div>
+
+<!-- 지도 위 고정 라이더 -->
+<div id="mapRider">
+  <div class="map-rider-fig">🏍️</div>
+  <div class="map-rider-shadow"></div>
+</div>
+
+<!-- ① 식당 선택 -->
+<div id="selectScreen" class="screen active">
+  <div class="select-header">
+    <div class="logo">배민 라이더</div>
+    <div class="sub">엠봇 라이더 체험 부스</div>
+  </div>
+  <div class="select-body">
+    <div class="select-title">내 식당을 선택하세요</div>
+    <div class="select-sub">담당 식당을 선택하면 AI가 배차를 추천해줍니다</div>
+    <div class="rest-list">
+      <div class="rest-item" onclick="selectRest('분식')">
+        <span class="ri-emoji">🍢</span>
+        <div><div class="ri-name">분식당 삼전점</div><div class="ri-items">떡볶이 · 순대 · 튀김 · 라면 · 김밥</div></div>
+      </div>
+      <div class="rest-item" onclick="selectRest('한식')">
+        <span class="ri-emoji">🍚</span>
+        <div><div class="ri-name">한식당 삼전점</div><div class="ri-items">비빔밥 · 된장찌개 · 불고기 · 냉면 · 제육볶음</div></div>
+      </div>
+      <div class="rest-item" onclick="selectRest('일식중식')">
+        <span class="ri-emoji">🍣</span>
+        <div><div class="ri-name">일중식당 삼전점</div><div class="ri-items">초밥 · 라멘 · 짜장면 · 짬뽕 · 마라탕</div></div>
+      </div>
+      <div class="rest-item" onclick="selectRest('양식')">
+        <span class="ri-emoji">🍝</span>
+        <div><div class="ri-name">양식당 삼전점</div><div class="ri-items">파스타 · 피자 · 스테이크 · 햄버거 · 리조또</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ② 운행 시작 -->
+<div id="startScreen" class="screen map-screen">
+  <div class="top-bar">
+    <div class="rider-name"><span id="lbl_start">분식</span> 라이더님</div>
+    <div class="toggle-wrap"><span class="toggle-label">신규배차</span><div class="toggle"></div></div>
+  </div>
+  <div class="rider-map-area">
+    <div class="start-rider-char">
+      <div class="start-rider-fig">🏍️</div>
+      <div class="start-rider-shadow"></div>
+      <div class="start-rider-label"><span id="lbl_start2">분식</span> 라이더님</div>
+    </div>
+  </div>
+  <div class="bottom-sheet">
+    <div class="sheet-handle"></div>
+    <div class="helmet-notice">
+      <span class="helmet-icon">⛑️</span>
+      <div class="helmet-text">
+        <strong>안전을 위해 꼭 확인하세요!</strong>
+        안전모를 착용하고 mBot2 로봇 경로를 확인해주세요.
+      </div>
+    </div>
+    <div class="start-name"><span id="lbl_start3">분식</span> 라이더님,<br>준비되셨나요?</div>
+    <div class="start-sub">AI 추천 배차로 오늘도 함께 달려봐요 🚀</div>
+    <button class="btn-teal" onclick="show('waitScreen')">운행 시작</button>
+  </div>
+</div>
+
+<!-- ③ 배차 대기 -->
+<div id="waitScreen" class="screen map-screen">
+  <div class="top-bar">
+    <div class="rider-name"><span id="lbl_wait">분식</span> 라이더님</div>
+    <div class="toggle-wrap"><span class="toggle-label">신규배차</span><div class="toggle"></div></div>
+  </div>
+  <div class="map-float">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <div class="wait-status">
+        <div class="wait-icon">🛵</div>
+        <div class="wait-text">배차 대기 중</div>
+        <div class="wait-sub">AI가 최적의 배달을 찾고 있어요</div>
+        <div class="rest-chip" id="waitChip">📍 분식당 삼전점</div>
+      </div>
+      <button class="btn-ai" onclick="startAI()">🤖 AI 추천 배차 받기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ④ AI 분석 중 -->
+<div id="aiScreen" class="screen map-screen">
+  <div class="top-bar">
+    <div class="rider-name"><span id="lbl_ai">분식</span> 라이더님</div>
+    <div class="toggle-wrap"><span class="toggle-label">신규배차</span><div class="toggle"></div></div>
+  </div>
+  <div class="ai-analyze">
+    <div class="ai-bot">🤖</div>
+    <div class="ai-title">AI 배차 분석 중...</div>
+    <div class="ai-sub">주변 최적 배달을 찾고 있어요</div>
+    <div class="ai-bar-wrap"><div class="ai-bar" id="aiBar"></div></div>
+    <div class="ai-step" id="aiStep">📍 현재 위치 확인 중</div>
+  </div>
+</div>
+
+<!-- ⑤ 신규 배차 -->
+<div id="orderScreen" class="screen map-screen">
+  <div class="top-bar">
+    <div class="rider-name"><span id="lbl_order">분식</span> 라이더님</div>
+    <div class="toggle-wrap"><span class="toggle-label">신규배차</span><div class="toggle"></div></div>
+  </div>
+  <div class="map-float">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <div class="new-badge">🤖 AI 추천 배차</div>
+      <div class="order-route">
+        <div class="route-row">
+          <div class="dot-pick"></div><div class="route-lbl">픽업</div>
+          <div><div class="route-nm" id="oPickupNm">분식당 삼전점</div><div class="route-ad" id="oPickupAd">배민로 12-34</div></div>
+        </div>
+        <div class="route-row">
+          <div class="dot-dest"></div><div class="route-lbl">전달</div>
+          <div><div class="route-nm">강사님 자리</div><div class="route-ad">우아한 오피스텔 1층</div></div>
+        </div>
+      </div>
+      <div class="order-menu-mini" id="orderMenuMini"></div>
+      <div class="order-btns">
+        <button class="btn-outline" onclick="rejectOrder()">거절</button>
+        <button class="btn-accept" onclick="acceptOrder()">
+          <span class="accept-main">배차 수락</span>
+          <span class="accept-timer" id="acceptTimer">59초 남음</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ⑥ 픽업지 이동 -->
+<div id="pickupScreen" class="screen map-screen">
+  <div class="top-bar">
+    <div class="rider-name"><span id="lbl_pickup">분식</span> 라이더님</div>
+    <div class="toggle-wrap"><span class="toggle-label">신규배차</span><div class="toggle"></div></div>
+  </div>
+  <div class="map-float">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <div class="pickup-dir-badge">📦 픽업지로 이동해주세요</div>
+      <div class="pickup-store-nm" id="pickupNm">분식당 삼전점</div>
+      <div class="pickup-menu-badge">담을 메뉴 <span id="pickupCount">0</span>개</div>
+      <div class="tip-box">
+        <strong>🤖 엠봇을 조종해서 가게로 이동해주세요!</strong><br>
+        가게 도착 후 버튼을 눌러 메뉴를 확인하세요.
+      </div>
+      <button class="btn-teal" onclick="show('detailScreen')">🏪 가게 도착</button>
+    </div>
+  </div>
+</div>
+
+<!-- ⑦ 배달 상세 -->
+<div id="detailScreen" class="screen">
+  <div class="detail-top">
+    <div style="font-size:0.72rem;color:#aaa;margin-bottom:4px">전달지</div>
+    <div class="detail-addr">강사님 자리</div>
+    <div class="detail-floor">우아한 오피스텔 · 배민로 12</div>
+  </div>
+  <div class="detail-body">
+    <div class="info-card">
+      <div class="card-title">가게 위치 TIP</div>
+      <div style="font-size:0.82rem;color:#555;line-height:1.7" id="detailTip">테이블 위 식당 표지판 확인 후<br>음식 모형을 로봇 바구니에 담아주세요.</div>
+      <button class="call-btn">📞 가게 전화 연결</button>
+    </div>
+    <div class="info-card">
+      <div class="o-num" id="dOrderNum">주문번호: #-----</div>
+      <div class="o-store" id="dStoreName">분식당 삼전점</div>
+      <div style="margin-top:12px;margin-bottom:6px;font-size:0.72rem;color:#aaa;font-weight:700;letter-spacing:0.5px;">🧺 메뉴 체크리스트 — 담으면 탭!<span class="checklist-progress" id="checkProgress"></span></div>
+      <div class="checklist-list" id="detailMenuGrid"></div>
+      <div class="o-item" style="margin-top:10px;margin-bottom:10px;border-bottom:none;">
+        <span class="o-item-name">배달비</span>
+        <span class="o-item-price">3,000원</span>
+      </div>
+      <div class="o-total" style="padding-top:10px;border-top:2px solid #eee;">
+        <span class="o-total-lbl">총 금액</span>
+        <span class="o-total-price" id="dTotal">—</span>
+      </div>
+    </div>
+  </div>
+  <div class="detail-btns">
+    <button class="btn-qr-big" id="btnQR" onclick="goQR()">📱 QR 스캔으로 픽업 완료 →</button>
+  </div>
+</div>
+
+<!-- ⑧ QR 스캔 -->
+<div id="qrScreen" class="screen">
+  <div class="qr-top">
+    <h2>📱 QR 코드 스캔</h2>
+    <p>테이블의 QR 코드를 스캔하면 픽업 완료!</p>
+  </div>
+  <div class="qr-wrap">
+    <div id="qr-reader"></div>
+    <div class="qr-guide">카메라를 QR 코드에 가까이 가져다 대세요</div>
+  </div>
+  <div class="qr-bottom">
+    <button class="btn-qr-manual" onclick="onQRSuccess()">강사님 확인 후 수동 완료</button>
+  </div>
+</div>
+
+<!-- ⑨ 전달지 이동 -->
+<div id="deliverScreen" class="screen map-screen">
+  <div class="top-bar">
+    <div class="rider-name">배달 중 🚀</div>
+    <div class="toggle-wrap"><span class="toggle-label">신규배차</span><div class="toggle"></div></div>
+  </div>
+  <div class="map-float">
+    <div class="bottom-sheet bottom-sheet-scroll">
+      <div class="sheet-handle"></div>
+      <div class="pickup-dir-badge">📍 배달지로 이동해주세요</div>
+      <div class="pickup-store-nm">강사님 자리</div>
+      <div style="font-size:0.82rem;color:#aaa;margin-bottom:14px;">우아한 오피스텔 1층</div>
+      <div class="deliver-timer-wrap">
+        <div class="deliver-timer-lbl">⏱ 경과 시간</div>
+        <div class="deliver-timer-big" id="deliverTimer">00:00</div>
+      </div>
+      <div class="deliver-menu-summary">
+        <div class="deliver-menu-lbl">🧺 담은 메뉴</div>
+        <div class="deliver-menu-chips" id="deliverMenuChips"></div>
+      </div>
+      <div class="tip-box">
+        <strong>🤖 엠봇을 조종해 배달을 시작해주세요!</strong><br>
+        강사님 자리에 도착하면 아래 버튼을 눌러주세요.
+      </div>
+      <button class="btn-teal" onclick="goPhoto()">📸 사진 촬영 후 인증 완료</button>
+    </div>
+  </div>
+</div>
+
+<!-- ⑩ 사진 촬영 -->
+<div id="photoScreen" class="screen">
+  <div class="photo-top">
+    <h2>배달 인증 사진</h2>
+    <p>전달 위치를 촬영해주세요</p>
+  </div>
+  <div class="photo-view">
+    <video id="cameraVideo" autoplay playsinline webkit-playsinline muted></video>
+    <img id="photoPreview" src="" alt="">
+    <div id="photoLoading">
+      <div class="cam-icon">📷</div>
+      <p>카메라 시작 중...</p>
+    </div>
+  </div>
+  <!-- 촬영 전: 셔터 -->
+  <div class="photo-shutter" id="photoShutter">
+    <button class="btn-shutter" onclick="capturePhoto()">⬤</button>
+  </div>
+  <!-- 촬영 후: 보내기 -->
+  <div class="photo-send-bar" id="photoSendBar" style="display:none">
+    <button class="btn-retake" onclick="retakePhoto()">다시 찍기</button>
+    <button class="btn-send" onclick="finishDelivery()">보내기 →</button>
+  </div>
+</div>
+
+<!-- ⑪ 완료 -->
+<div id="doneScreen" class="screen">
+  <div class="done-top">
+    <div class="done-emoji">🎉</div>
+    <h1>배달 완료!</h1>
+    <p>빠르고 안전하게 배달해주셔서<br>감사합니다!</p>
+  </div>
+  <div class="done-body">
+    <div class="time-card">
+      <div class="time-label">이번 배달 기록</div>
+      <div class="time-value" id="earnTime">--</div>
+      <div class="time-unit">로봇 출발 → 배달 완료</div>
+    </div>
+    <div class="info-card" style="margin-bottom:16px;">
+      <div class="card-title">💰 배달료 정산</div>
+      <div class="o-item" style="border-bottom:none;">
+        <span class="o-item-name">기본 배달료</span>
+        <span class="o-item-price">3,000원</span>
+      </div>
+      <div class="o-item" style="border-bottom:none;">
+        <span class="o-item-name">AI 추천 보너스</span>
+        <span class="o-item-price" style="color:#00c4b4;">+500원</span>
+      </div>
+      <div class="o-total" style="padding-top:10px;border-top:2px solid #eee;">
+        <span class="o-total-lbl">이번 수입</span>
+        <span class="o-total-price">3,500원</span>
+      </div>
+    </div>
+    <button class="btn-teal" onclick="resetGame()">🔄 다음 배달 시작하기</button>
+  </div>
+</div>
+
+<script>
+// ── 인앱 브라우저 감지 ──
+(function() {
+  const ua = navigator.userAgent;
+  const isKakao     = /KAKAOTALK|KAKAO/i.test(ua);
+  const isOtherApp  = /Line\/|Instagram|FBAN|FBAV|Twitter|Snapchat/i.test(ua);
+  const isIOSWebView = /iPhone|iPad|iPod/.test(ua) && !/Safari\//.test(ua) && /AppleWebKit/.test(ua);
+  if (isKakao || isOtherApp || isIOSWebView) {
+    document.getElementById('inAppWarning').style.display = 'flex';
+  }
+})();
+
+// row: 식당 행(0~3), col: 메뉴 열(0~4) — food.png 스프라이트 위치
+const RESTAURANTS = {
+  '분식':    { name:'분식당 삼전점',   addr:'배민로 12-34',    row:0, menus:[{name:'떡볶이',price:8500,col:0},{name:'순대',price:7000,col:1},{name:'튀김',price:6000,col:2},{name:'라면',price:7500,col:3},{name:'김밥',price:5000,col:4}] },
+  '한식':    { name:'한식당 삼전점',   addr:'라이더길 56-7',   row:1, menus:[{name:'비빔밥',price:9000,col:0},{name:'된장찌개',price:8000,col:1},{name:'불고기',price:13000,col:2},{name:'냉면',price:10000,col:3},{name:'제육볶음',price:11000,col:4}] },
+  '일식중식': { name:'일중식당 삼전점', addr:'우아한로 89-2',   row:2, menus:[{name:'초밥',price:15000,col:0},{name:'라멘',price:12000,col:1},{name:'짜장면',price:7000,col:2},{name:'짬뽕',price:8500,col:3},{name:'마라탕',price:14000,col:4}] },
+  '양식':    { name:'양식당 삼전점',   addr:'배달의민족로 33', row:3, menus:[{name:'파스타',price:13000,col:0},{name:'피자',price:16000,col:1},{name:'스테이크',price:22000,col:2},{name:'햄버거',price:11000,col:3},{name:'리조또',price:14000,col:4}] },
+};
+
+const MAP_SCREENS    = ['waitScreen','orderScreen','pickupScreen','deliverScreen'];
+const MOVING_SCREENS = [];
+
+let myRest = null, myOrder = null;
+let raceStartTime = null;
+let acceptCountdown = null, deliverInterval = null, aiStepInterval = null;
+let activeQR = null, cameraStream = null;
+
+// ── 화면 전환 ──
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+
+  // 지도 위 라이더 표시/애니메이션 제어
+  const rider = document.getElementById('mapRider');
+  if (MAP_SCREENS.includes(id)) {
+    rider.style.display = 'block';
+    rider.classList.toggle('moving', MOVING_SCREENS.includes(id));
+  } else {
+    rider.style.display = 'none';
+  }
+
+  // 배달 상세: 체크리스트 렌더링
+  if (id === 'detailScreen') renderDetailChecklist();
+
+  // 카메라 자동 시작/종료
+  if (id === 'photoScreen') initCamera();
+  else stopCamera();
+}
+
+// ── 식당 선택 ──
+function selectRest(key) {
+  myRest = key;
+  const r = RESTAURANTS[key];
+  const short = key === '일식중식' ? '일중식' : key;
+  ['lbl_start','lbl_start2','lbl_start3','lbl_wait','lbl_ai','lbl_order','lbl_pickup']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.textContent = short; });
+  document.getElementById('waitChip').textContent = '📍 ' + r.name;
+  show('startScreen');
+}
+
+// ── AI 추천 배차 ──
+function startAI() {
+  show('aiScreen');
+  const bar = document.getElementById('aiBar');
+  bar.style.transition = 'none'; bar.style.width = '0';
+  requestAnimationFrame(() => { bar.style.transition = 'width 2s ease-out'; bar.style.width = '100%'; });
+
+  const steps = ['📍 현재 위치 확인 중','🍽️ 주변 주문 탐색 중','⚡ 최적 경로 계산 중','✅ 배차 완료!'];
+  let i = 0;
+  const el = document.getElementById('aiStep');
+  el.textContent = steps[0];
+  clearInterval(aiStepInterval);
+  aiStepInterval = setInterval(() => { if (++i < steps.length) el.textContent = steps[i]; else clearInterval(aiStepInterval); }, 550);
+  setTimeout(() => { generateOrder(); show('orderScreen'); }, 2200);
+}
+
+// ── 랜덤 주문 생성 (1~5개, 중복 없음) ──
+function generateOrder() {
+  const r = RESTAURANTS[myRest];
+  const shuffled = [...r.menus].sort(() => Math.random() - 0.5);
+  const count = Math.floor(Math.random() * 5) + 1;
+  const items = shuffled.slice(0, count);
+  myOrder = { items, num: '#' + Math.floor(Math.random() * 90000 + 10000) };
+
+  document.getElementById('oPickupNm').textContent = r.name;
+  document.getElementById('oPickupAd').textContent = r.addr;
+  // 미니 메뉴 이미지
+  const miniRow = document.getElementById('orderMenuMini');
+  if (miniRow) miniRow.innerHTML = items.map(item => {
+    const px = (item.col/4*100).toFixed(2), py = (r.row/3*100).toFixed(2);
+    return `<div class="mini-menu-item"><div class="mini-menu-img" style="background-position:${px}% ${py}%"></div><div class="mini-menu-nm">${item.name}</div></div>`;
+  }).join('');
+  document.getElementById('dOrderNum').textContent = '주문번호: ' + myOrder.num;
+  document.getElementById('dStoreName').textContent = r.name;
+  const total = items.reduce((s, i) => s + i.price, 0) + 3000;
+  document.getElementById('dTotal').textContent = total.toLocaleString() + '원';
+  document.getElementById('pickupNm').textContent = r.name;
+  document.getElementById('pickupCount').textContent = items.length;
+
+  let sec = 59;
+  document.getElementById('acceptTimer').textContent = sec + '초 남음';
+  clearInterval(acceptCountdown);
+  acceptCountdown = setInterval(() => {
+    if (--sec <= 0) { clearInterval(acceptCountdown); show('waitScreen'); }
+    else document.getElementById('acceptTimer').textContent = sec + '초 남음';
+  }, 1000);
+}
+
+// ── 배달 상세 체크리스트 렌더링 ──
+function renderDetailChecklist() {
+  const grid = document.getElementById('detailMenuGrid');
+  if (!grid || !myOrder) return;
+  const r = RESTAURANTS[myRest];
+  grid.innerHTML = myOrder.items.map((item, i) => {
+    const posX = (item.col / 4 * 100).toFixed(2);
+    const posY = (r.row / 3 * 100).toFixed(2);
+    return `
+    <div class="check-row" id="menuCard_${i}" onclick="checkMenuCard(${i})">
+      <div class="check-row-img" style="background-position:${posX}% ${posY}%"></div>
+      <div class="check-row-info">
+        <div class="check-row-name">${item.name} 1개</div>
+        <div class="check-row-price">${item.price.toLocaleString()}원</div>
+      </div>
+      <div class="check-row-box">✓</div>
+    </div>`;
+  }).join('');
+  document.getElementById('btnQR').classList.remove('show');
+  updateCheckProgress();
+}
+
+function checkMenuCard(i) {
+  const card = document.getElementById('menuCard_' + i);
+  if (card) card.classList.toggle('checked');
+  updateCheckProgress();
+}
+
+function updateCheckProgress() {
+  if (!myOrder) return;
+  const total = myOrder.items.length;
+  const checked = document.querySelectorAll('#detailMenuGrid .check-row.checked').length;
+  document.getElementById('checkProgress').textContent = ` ${checked}/${total}`;
+  if (checked === total) {
+    document.getElementById('btnQR').classList.add('show');
+  }
+}
+
+function acceptOrder() { clearInterval(acceptCountdown); show('pickupScreen'); }
+function rejectOrder()  { clearInterval(acceptCountdown); show('waitScreen'); }
+
+// ── QR 스캔 ──
+// iOS Safari: html5-qrcode가 내부적으로 enumerateDevices()를 먼저 호출해 제스처 컨텍스트를 소모함.
+// 라이브러리 시작 전에 getUserMedia를 직접 호출해 권한을 미리 획득한 뒤 트랙을 해제한다.
+async function goQR() {
+  show('qrScreen');
+  if (typeof Html5Qrcode === 'undefined') return;
+  stopQR();
+
+  // 제스처 컨텍스트 안에서 먼저 권한 요청 (iOS Safari 대응)
+  try {
+    const tmp = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    tmp.getTracks().forEach(t => t.stop());
+  } catch(e) {
+    try {
+      const tmp2 = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      tmp2.getTracks().forEach(t => t.stop());
+    } catch(e2) {
+      const guide = document.querySelector('.qr-guide');
+      if (guide) {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        guide.textContent = isIOS
+          ? '카메라 권한을 허용해주세요. 설정 앱 → Safari → 카메라 → 허용'
+          : '카메라 권한을 허용해주세요. 아래 수동 완료 버튼을 이용할 수 있어요.';
+      }
+      return;
+    }
+  }
+
+  activeQR = new Html5Qrcode('qr-reader');
+  activeQR.start(
+    { facingMode: 'environment' },
+    { fps: 10, qrbox: { width: 220, height: 220 } },
+    () => { stopQR(); onQRSuccess(); },
+    () => {}
+  ).catch(err => {
+    const guide = document.querySelector('.qr-guide');
+    if (guide) guide.textContent = '카메라 권한을 허용해주세요. 아래 수동 완료 버튼을 이용할 수 있어요.';
+  });
+}
+
+// ── 사진 촬영 진입 (onclick에서 직접 권한 요청) ──
+async function goPhoto() {
+  // iOS Safari는 facingMode: {exact} → 일반 facingMode → video:true 순으로 시도
+  const tries = [
+    { video: { facingMode: { exact: 'environment' } }, audio: false },
+    { video: { facingMode: 'environment' }, audio: false },
+    { video: true, audio: false },
+  ];
+  for (const c of tries) {
+    try { cameraStream = await navigator.mediaDevices.getUserMedia(c); break; }
+    catch(e) { cameraStream = null; }
+  }
+  show('photoScreen');
+}
+
+function stopQR() {
+  if (activeQR) { activeQR.stop().catch(() => {}); activeQR = null; }
+}
+
+function onQRSuccess() {
+  stopQR();
+  raceStartTime = Date.now();
+  const btnQR = document.getElementById('btnQR');
+  if (btnQR) btnQR.classList.remove('show');
+  // 전달지 화면에 담은 메뉴 칩 표시
+  if (myOrder) {
+    const r = RESTAURANTS[myRest];
+    const chips = document.getElementById('deliverMenuChips');
+    if (chips) chips.innerHTML = myOrder.items.map(item => {
+      const px = (item.col/4*100).toFixed(2), py = (r.row/3*100).toFixed(2);
+      return `<span class="deliver-chip"><span style="display:inline-block;width:22px;height:22px;border-radius:50%;background-image:url('food.png');background-size:500% 400%;background-position:${px}% ${py}%;vertical-align:middle;margin-right:4px;"></span>${item.name}</span>`;
+    }).join('');
+  }
+  startDeliverTimer();
+  show('deliverScreen');
+}
+
+// ── 배달 타이머 ──
+function startDeliverTimer() {
+  clearInterval(deliverInterval);
+  const el = document.getElementById('deliverTimer');
+  deliverInterval = setInterval(() => {
+    const e = Math.floor((Date.now() - raceStartTime) / 1000);
+    el.textContent = String(Math.floor(e/60)).padStart(2,'0') + ':' + String(e%60).padStart(2,'0');
+  }, 500);
+}
+
+// ── 카메라 ──
+async function initCamera() {
+  const video = document.getElementById('cameraVideo');
+  const loading = document.getElementById('photoLoading');
+  const preview = document.getElementById('photoPreview');
+  video.style.display = 'none';
+  preview.style.display = 'none';
+  loading.style.display = 'block';
+  document.getElementById('photoShutter').style.display = 'flex';
+  document.getElementById('photoSendBar').style.display = 'none';
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    loading.innerHTML = '<div class="cam-icon">⚠️</div><p>카메라를 지원하지 않는 브라우저입니다</p>';
+    return;
+  }
+  try {
+    // goPhoto()에서 이미 권한 취득한 스트림 재사용, 없으면 재시도
+    if (!cameraStream) {
+      cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    }
+    video.srcObject = cameraStream;
+    video.style.display = 'block';
+    loading.style.display = 'none';
+  } catch (e) {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    loading.innerHTML = isIOS
+      ? '<div class="cam-icon">⚠️</div><p>카메라 권한이 필요합니다<br><small>📱 설정 앱 → Safari → 카메라<br>→ "허용"으로 변경 후 새로고침</small></p>'
+      : '<div class="cam-icon">⚠️</div><p>카메라 권한이 필요합니다<br><small>브라우저 설정에서 허용해주세요</small></p>';
+  }
+}
+
+function stopCamera() {
+  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+  const video = document.getElementById('cameraVideo');
+  video.srcObject = null; video.style.display = 'none';
+}
+
+function capturePhoto() {
+  const video = document.getElementById('cameraVideo');
+  const canvas = document.createElement('canvas');
+  canvas.width  = video.videoWidth  || 640;
+  canvas.height = video.videoHeight || 480;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  stopCamera();
+
+  const preview = document.getElementById('photoPreview');
+  preview.src = canvas.toDataURL('image/jpeg', 0.85);
+  preview.style.display = 'block';
+  document.getElementById('photoLoading').style.display = 'none';
+  document.getElementById('photoShutter').style.display = 'none';
+  document.getElementById('photoSendBar').style.display = 'flex';
+}
+
+function retakePhoto() {
+  document.getElementById('photoPreview').style.display = 'none';
+  initCamera();
+}
+
+// ── 배달 완료 ──
+function finishDelivery() {
+  clearInterval(deliverInterval);
+  const elapsed = Math.round((Date.now() - raceStartTime) / 1000);
+  const m = Math.floor(elapsed/60), s = elapsed%60;
+  document.getElementById('earnTime').textContent = m > 0 ? `${m}분 ${s}초` : `${s}초`;
+  const msgs = [
+    '이번 배달 수고하셨어요! 다음에도 AI가 최적 배차로 안내할게요.',
+    '빠른 배달 감사합니다! 다음 배차도 AI가 준비했어요.',
+    '오늘도 안전 완료! AI가 다음 배달을 기다리고 있어요.',
+  ];
+  show('doneScreen');
+}
+
+function resetGame() { myOrder = null; raceStartTime = null; show('waitScreen'); }
+</script>
+</body>
+</html>
