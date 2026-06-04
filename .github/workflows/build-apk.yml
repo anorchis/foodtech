@@ -37,13 +37,15 @@ jobs:
           sed -i '/@import url.*fonts.googleapis/d' \
             부스운영/오프라인/rider-apk/app/src/main/assets/www/index.html
 
-      - name: Grant execute permission for gradlew
-        working-directory: 부스운영/오프라인/rider-apk
-        run: chmod +x gradlew
+      - name: Install Gradle 8.4
+        run: |
+          wget -q https://services.gradle.org/distributions/gradle-8.4-bin.zip
+          unzip -q gradle-8.4-bin.zip -d /opt
+          echo "/opt/gradle-8.4/bin" >> $GITHUB_PATH
 
       - name: Build debug APK
         working-directory: 부스운영/오프라인/rider-apk
-        run: ./gradlew assembleDebug --no-daemon
+        run: gradle assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
