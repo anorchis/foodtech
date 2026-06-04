@@ -6,6 +6,8 @@
 
     <application
         android:label="배민 라이더"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
         android:allowBackup="false"
         android:supportsRtl="true"
         android:hardwareAccelerated="true"
