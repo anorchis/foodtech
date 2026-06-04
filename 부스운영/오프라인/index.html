@@ -884,11 +884,12 @@ async function goQR() {
   activeQR.start(
     { facingMode: 'environment' },
     { fps: 10, qrbox: { width: 220, height: 220 } },
-    async (decodedText) => {
+    () => {
       if (qrLock) return;
       qrLock = true;
-      try { await activeQR.stop(); } catch(e) {}
+      const qr = activeQR;
       activeQR = null;
+      if (qr) qr.stop().catch(() => {});
       onQRSuccess();
     },
     () => {}
