@@ -25,13 +25,21 @@ public class MainActivity extends AppCompatActivity {
 
         webView = findViewById(R.id.webview);
         WebSettings settings = webView.getSettings();
+
         settings.setJavaScriptEnabled(true);
-        settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setDomStorageEnabled(true);
+        settings.setMediaPlaybackRequiresUserGesture(false);
+
+        // 로컬 파일 접근 허용
         settings.setAllowFileAccess(true);
         settings.setAllowContentAccess(true);
+        settings.setAllowFileAccessFromFileURLs(true);
+        settings.setAllowUniversalAccessFromFileURLs(true);
 
-        webView.setWebViewClient(new WebViewClient());
+        // 혼합 콘텐츠 허용 (로컬 파일에서 로컬 리소스 로드)
+        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+
+        // 카메라 권한 처리
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public void onPermissionRequest(final PermissionRequest request) {
@@ -48,6 +56,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        webView.setWebViewClient(new WebViewClient());
         webView.loadUrl("file:///android_asset/www/index.html");
     }
 
