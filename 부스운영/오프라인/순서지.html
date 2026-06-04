@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>카미봇 배달 체험 순서지</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: #fff;
+      color: #111;
+      padding: 12px 16px;
+      font-size: 12px;
+    }
+
+    .header {
+      text-align: center;
+      border-bottom: 2.5px solid #222;
+      padding-bottom: 7px;
+      margin-bottom: 8px;
+    }
+    .header h1 { font-size: 17px; font-weight: 900; }
+    .header p  { font-size: 10px; color: #666; margin-top: 2px; }
+
+    .col-headers {
+      display: grid;
+      grid-template-columns: 1fr 220px 1fr;
+      gap: 5px;
+      margin-bottom: 6px;
+    }
+    .col-head {
+      text-align: center;
+      padding: 5px 4px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 900;
+      line-height: 1.3;
+    }
+    .col-head.left  { background: #00c4b4; color: #fff; }
+    .col-head.mid   { background: #ff6b35; color: #fff; }
+    .col-head.right { background: #6c63ff; color: #fff; }
+
+    .timeline { display: flex; flex-direction: column; }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 220px 1fr;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .card {
+      border-radius: 7px;
+      padding: 5px 9px;
+    }
+    .card-left, .card-right {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .card-left  { background: #f0fdfb; border: 1.5px solid #00c4b4; }
+    .card-right { background: #f5f4ff; border: 1.5px solid #6c63ff; }
+    .card-mid   { background: #fff3ef; border: 1.5px solid #ff6b35; }
+    .card-done  { background: #00c4b4; border: 1.5px solid #00c4b4; color: #fff; text-align: center; }
+
+    .card-inner {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .card-mid .card-inner {
+      font-size: 10.5px;
+      white-space: normal;
+      line-height: 1.35;
+    }
+    .card-n {
+      font-size: 10px;
+      font-weight: 900;
+      opacity: 0.45;
+      flex-shrink: 0;
+    }
+    .card-done .card-inner { justify-content: center; font-size: 13px; font-weight: 900; }
+
+    .arrow-row {
+      display: grid;
+      grid-template-columns: 1fr 220px 1fr;
+      gap: 5px;
+      height: 11px;
+      align-items: center;
+    }
+    .arr { text-align: center; font-size: 11px; line-height: 1; }
+    .arr-l { color: #00c4b4; }
+    .arr-r { color: #6c63ff; }
+    .arr-m { color: #ff6b35; }
+
+    .switch-row {
+      height: 17px;
+      display: flex;
+      align-items: center;
+      margin: 1px 0;
+    }
+    .switch-arrow {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      gap: 5px;
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #888;
+    }
+    .switch-line { flex: 1; height: 1.5px; }
+    .switch-line.to-right { background: linear-gradient(to right, #00c4b4, #6c63ff); }
+    .switch-line.to-left  { background: linear-gradient(to right, #6c63ff, #00c4b4); }
+    .switch-label {
+      background: #f4f4f4;
+      border: 1px solid #ddd;
+      border-radius: 20px;
+      padding: 1px 8px;
+      white-space: nowrap;
+      font-size: 9.5px;
+    }
+
+    .notice {
+      margin-top: 9px;
+      border: 1.5px solid #ffc107;
+      border-radius: 7px;
+      padding: 6px 10px;
+      background: #fffdf0;
+      font-size: 10.5px;
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+    .notice b { color: #a07800; flex-shrink: 0; }
+    .notice ul { padding-left: 13px; color: #555; line-height: 1.75; }
+
+    /* ── QR 섹션 ── */
+    .qr-section {
+      margin-top: 12px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+    .qr-section-title {
+      font-size: 11px;
+      font-weight: 900;
+      color: #555;
+      text-align: center;
+      margin-bottom: 8px;
+      letter-spacing: 0.3px;
+    }
+    .qr-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    .qr-card {
+      text-align: center;
+      border: 1.5px solid #eee;
+      border-radius: 8px;
+      padding: 6px 4px;
+      background: #fafafa;
+    }
+    .qr-emoji { font-size: 20px; line-height: 1; margin-bottom: 3px; }
+    .qr-name  { font-size: 10px; font-weight: 900; color: #333; margin-bottom: 5px; line-height: 1.3; }
+    .qr-box canvas, .qr-box img { width: 90px !important; height: 90px !important; }
+
+    @media print {
+      body { padding: 8px 12px; }
+      @page { margin: 7mm; size: A4 portrait; }
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+<div class="header">
+  <h1>🤖 카미봇 배달 체험 — 진행 순서</h1>
+  <p>배달 실패 없이 가장 빨리 완료한 사람에게 간식 증정! 🍬</p>
+</div>
+
+<div class="col-headers">
+  <div class="col-head left">📱 왼쪽 화면 · 배달 앱</div>
+  <div class="col-head mid">🤲 오프라인</div>
+  <div class="col-head right">🕹️ 오른쪽 · 리모콘</div>
+</div>
+
+<div class="timeline">
+
+  <div class="row">
+    <div class="card card-left"><div class="card-inner"><span class="card-n">①</span> 📋 담당 식당 선택</div></div>
+    <div></div><div></div>
+  </div>
+  <div class="arrow-row"><div class="arr arr-l">▼</div><div></div><div></div></div>
+
+  <div class="row">
+    <div class="card card-left"><div class="card-inner"><span class="card-n">②</span> 🚀 운행 시작 버튼 클릭</div></div>
+    <div></div><div></div>
+  </div>
+  <div class="arrow-row"><div class="arr arr-l">▼</div><div></div><div></div></div>
+
+  <div class="row">
+    <div class="card card-left"><div class="card-inner"><span class="card-n">③</span> 🤖 AI 추천 배차 확인</div></div>
+    <div></div><div></div>
+  </div>
+  <div class="arrow-row"><div class="arr arr-l">▼</div><div></div><div></div></div>
+
+  <div class="row">
+    <div class="card card-left"><div class="card-inner"><span class="card-n">④</span> ✅ 배차 수락 버튼 클릭</div></div>
+    <div></div><div></div>
+  </div>
+
+  <div class="switch-row">
+    <div class="switch-arrow">
+      <div class="switch-line to-right"></div>
+      <div class="switch-label">▶▶ 오른쪽 화면으로 이동</div>
+      <div class="switch-line to-right"></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div></div><div></div>
+    <div class="card card-right"><div class="card-inner"><span class="card-n">⑤</span> 🕹️ 카미봇 조종 → 식당으로 이동</div></div>
+  </div>
+
+  <div class="switch-row">
+    <div class="switch-arrow">
+      <div class="switch-line to-left"></div>
+      <div class="switch-label">◀◀ 왼쪽 화면으로 이동</div>
+      <div class="switch-line to-left"></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="card card-left"><div class="card-inner"><span class="card-n">⑥</span> 📍 가게 도착 확인</div></div>
+    <div></div><div></div>
+  </div>
+  <div class="arrow-row"><div></div><div class="arr arr-m">▼</div><div></div></div>
+
+  <div class="row">
+    <div></div>
+    <div class="card card-mid"><div class="card-inner"><span class="card-n">⑦</span> 🤲 카미봇에 음식 담기</div></div>
+    <div></div>
+  </div>
+  <div class="arrow-row"><div class="arr arr-l">▼</div><div></div><div></div></div>
+
+  <div class="row">
+    <div class="card card-left"><div class="card-inner"><span class="card-n">⑧</span> ☑️ 음식 체크 후 QR 스캔으로 픽업 완료</div></div>
+    <div></div><div></div>
+  </div>
+  <div class="arrow-row"><div></div><div class="arr arr-m">▼</div><div></div></div>
+
+  <div class="row">
+    <div></div>
+    <div class="card card-mid"><div class="card-inner"><span class="card-n">⑨</span> 📷 가게 QR 코드 찍기</div></div>
+    <div></div>
+  </div>
+
+  <div class="switch-row">
+    <div class="switch-arrow">
+      <div class="switch-line to-right"></div>
+      <div class="switch-label">▶▶ 오른쪽 화면으로 이동</div>
+      <div class="switch-line to-right"></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div></div><div></div>
+    <div class="card card-right"><div class="card-inner"><span class="card-n">⑩</span> 🕹️ 카미봇 조종 → 강사님 자리로 이동</div></div>
+  </div>
+  <div class="arrow-row"><div></div><div class="arr arr-m">▼</div><div></div></div>
+
+  <div class="row">
+    <div></div>
+    <div class="card card-mid"><div class="card-inner"><span class="card-n">⑪</span> 🤲 음식 내리기 · 강사님께 전달</div></div>
+    <div></div>
+  </div>
+
+  <div class="switch-row">
+    <div class="switch-arrow">
+      <div class="switch-line to-left"></div>
+      <div class="switch-label">◀◀ 왼쪽 화면으로 이동</div>
+      <div class="switch-line to-left"></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="card card-left"><div class="card-inner"><span class="card-n">⑫</span> 📸 인증 사진 촬영 후 인증 완료 클릭</div></div>
+    <div></div><div></div>
+  </div>
+  <div class="arrow-row"><div class="arr arr-l">▼</div><div></div><div></div></div>
+
+  <div class="row">
+    <div class="card card-left"><div class="card-inner"><span class="card-n">⑬</span> 📤 배달 인증 사진 보내기</div></div>
+    <div></div><div></div>
+  </div>
+  <div class="arrow-row"><div class="arr arr-l">▼</div><div></div><div></div></div>
+
+  <div class="row">
+    <div class="card card-done" style="grid-column:1/-1">
+      <div class="card-inner">🎉 배달 완료! 수고했어요!</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="qr-section">
+  <div class="qr-section-title">📍 가게별 픽업 인증 QR — 각 가게에 붙여두세요</div>
+  <div class="qr-grid">
+    <div class="qr-card">
+      <div class="qr-emoji">🍢</div>
+      <div class="qr-name">분식당<br>꿈트리점</div>
+      <div class="qr-box" id="qr-bunsik"></div>
+    </div>
+    <div class="qr-card">
+      <div class="qr-emoji">🍚</div>
+      <div class="qr-name">한식당<br>꿈트리점</div>
+      <div class="qr-box" id="qr-hansik"></div>
+    </div>
+    <div class="qr-card">
+      <div class="qr-emoji">🍱</div>
+      <div class="qr-name">일중식당<br>꿈트리점</div>
+      <div class="qr-box" id="qr-iljungsik"></div>
+    </div>
+    <div class="qr-card">
+      <div class="qr-emoji">🍝</div>
+      <div class="qr-name">양식당<br>꿈트리점</div>
+      <div class="qr-box" id="qr-yangsik"></div>
+    </div>
+  </div>
+</div>
+
+<div class="notice">
+  <b>⚠️ 주의</b>
+  <ul>
+    <li>음식은 천천히 카미봇에 올리고 내려주세요. (떨어지면 실패!)</li>
+    <li>QR 코드는 밝은 곳에서 찍어야 잘 인식돼요.</li>
+  </ul>
+</div>
+
+<script>
+  new QRCode(document.getElementById('qr-bunsik'),    { text:'PICKUP_BUNSIK',    width:90, height:90, colorDark:'#111', colorLight:'#fafafa' });
+  new QRCode(document.getElementById('qr-hansik'),    { text:'PICKUP_HANSIK',    width:90, height:90, colorDark:'#111', colorLight:'#fafafa' });
+  new QRCode(document.getElementById('qr-iljungsik'), { text:'PICKUP_ILJUNGSIK', width:90, height:90, colorDark:'#111', colorLight:'#fafafa' });
+  new QRCode(document.getElementById('qr-yangsik'),   { text:'PICKUP_YANGSIK',   width:90, height:90, colorDark:'#111', colorLight:'#fafafa' });
+</script>
+</body>
+</html>

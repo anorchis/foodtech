@@ -273,6 +273,24 @@
     .btn-retake { flex:1; background:none; border:2px solid #555; color:#fff; padding:14px; border-radius:12px; font-size:0.88rem; font-weight:700; cursor:pointer; font-family:inherit; }
     .btn-send   { flex:2; background:#00c4b4; color:#fff; border:none; padding:14px; border-radius:12px; font-size:0.88rem; font-weight:900; cursor:pointer; font-family:inherit; }
 
+    /* ══ 픽업 완료 화면 ══ */
+    #pickupSuccessScreen {
+      background: #00c4b4;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      flex-direction: column;
+    }
+    .ps-icon { font-size: 5.5rem; animation: psPopIn 0.45s cubic-bezier(0.36,0.07,0.19,0.97) both; }
+    .ps-store { font-size: 1rem; font-weight: 700; color: rgba(255,255,255,0.8); margin-top: 18px; letter-spacing: -0.3px; }
+    .ps-text  { font-size: 2.6rem; font-weight: 900; color: #fff; margin-top: 4px; letter-spacing: -1px; }
+    .ps-sub   { font-size: 0.82rem; color: rgba(255,255,255,0.65); margin-top: 10px; }
+    @keyframes psPopIn {
+      0%   { transform: scale(0.2) rotate(-15deg); opacity: 0; }
+      60%  { transform: scale(1.18) rotate(5deg);  opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+
     /* ══ ⑪ 완료 ══ */
     #doneScreen { background:#fff; }
     .done-top { background:#00c4b4; padding:44px 24px 36px; text-align:center; color:#fff; }
@@ -587,6 +605,14 @@
   </div>
 </div>
 
+<!-- 픽업 완료 -->
+<div id="pickupSuccessScreen" class="screen">
+  <div class="ps-icon" id="psIcon">✅</div>
+  <div class="ps-store" id="psStore"></div>
+  <div class="ps-text">픽업 완료!</div>
+  <div class="ps-sub">잠시 후 배달 화면으로 이동합니다…</div>
+</div>
+
 <!-- ⑨ 전달지 이동 -->
 <div id="deliverScreen" class="screen map-screen">
   <div class="top-bar">
@@ -885,20 +911,28 @@ function stopQR() {
 
 function onQRSuccess() {
   stopQR();
-  raceStartTime = Date.now();
-  const btnQR = document.getElementById('btnQR');
-  if (btnQR) btnQR.classList.remove('show');
-  // 전달지 화면에 담은 메뉴 칩 표시
-  if (myOrder) {
-    const r = RESTAURANTS[myRest];
-    const chips = document.getElementById('deliverMenuChips');
-    if (chips) chips.innerHTML = myOrder.items.map(item => {
-      const px = (item.col/4*100).toFixed(2), py = (r.row/3*100).toFixed(2);
-      return `<span class="deliver-chip"><span style="display:inline-block;width:22px;height:22px;border-radius:50%;background-image:url('food.png');background-size:500% 400%;background-position:${px}% ${py}%;vertical-align:middle;margin-right:4px;"></span>${item.name}</span>`;
-    }).join('');
-  }
-  startDeliverTimer();
-  show('deliverScreen');
+  // 픽업 완료 화면 표시
+  const STORE_EMOJI = { '분식':'🍢', '한식':'🍚', '일식중식':'🍱', '양식':'🍝' };
+  const r = RESTAURANTS[myRest];
+  document.getElementById('psIcon').textContent = STORE_EMOJI[myRest] || '✅';
+  document.getElementById('psStore').textContent = r ? r.name : '';
+  show('pickupSuccessScreen');
+
+  setTimeout(() => {
+    raceStartTime = Date.now();
+    const btnQR = document.getElementById('btnQR');
+    if (btnQR) btnQR.classList.remove('show');
+    if (myOrder) {
+      const r2 = RESTAURANTS[myRest];
+      const chips = document.getElementById('deliverMenuChips');
+      if (chips) chips.innerHTML = myOrder.items.map(item => {
+        const px = (item.col/4*100).toFixed(2), py = (r2.row/3*100).toFixed(2);
+        return `<span class="deliver-chip"><span style="display:inline-block;width:22px;height:22px;border-radius:50%;background-image:url('food.png');background-size:500% 400%;background-position:${px}% ${py}%;vertical-align:middle;margin-right:4px;"></span>${item.name}</span>`;
+      }).join('');
+    }
+    startDeliverTimer();
+    show('deliverScreen');
+  }, 2200);
 }
 
 // ── 배달 타이머 ──
