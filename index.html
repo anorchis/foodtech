@@ -25,7 +25,7 @@
       #qrScreen, #photoScreen { background-color: #111 !important; }
       .select-header, .done-top { background-color: #00c4b4 !important; }
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
     body { font-family: 'Noto Sans KR', sans-serif; background: #f4f4f4; color: #222; min-height: 100vh; overflow-x: hidden; }
 
     .screen { display: none; min-height: 100vh; flex-direction: column; position: relative; background:#fff; }
@@ -207,14 +207,14 @@
     .check-row-box { width:28px; height:28px; border-radius:50%; border:2px solid #ddd; display:flex; align-items:center; justify-content:center; font-size:0.9rem; color:transparent; flex-shrink:0; transition:all 0.15s; }
     .check-row.checked .check-row-box { background:#00c4b4; border-color:#00c4b4; color:#fff; }
     /* 스크롤 바텀시트 */
-    .bottom-sheet-scroll { max-height:72vh; overflow-y:auto; }
+    .bottom-sheet-scroll { max-height:72vh; overflow-y:auto; -webkit-overflow-scrolling:touch; }
 
     /* ══ ⑦ 배달 상세 ══ */
     #detailScreen { background:#f4f4f4; }
     .detail-top { background:#fff; padding:16px 20px; border-bottom:1px solid #eee; }
     .detail-addr { font-size:1.1rem; font-weight:900; }
     .detail-floor { font-size:0.78rem; color:#aaa; margin-top:2px; }
-    .detail-body { padding:12px 16px; flex:1; overflow-y:auto; }
+    .detail-body { padding:12px 16px; flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
     .info-card { background:#fff; border-radius:12px; padding:16px; margin-bottom:10px; }
     .card-title { font-size:0.72rem; color:#aaa; font-weight:700; letter-spacing:0.5px; margin-bottom:10px; }
     .call-btn { width:100%; background:#f4f4f4; border:none; border-radius:10px; padding:12px; font-size:0.88rem; font-weight:700; color:#222; cursor:pointer; font-family:inherit; margin-top:10px; }
@@ -273,6 +273,24 @@
     .btn-retake { flex:1; background:none; border:2px solid #555; color:#fff; padding:14px; border-radius:12px; font-size:0.88rem; font-weight:700; cursor:pointer; font-family:inherit; }
     .btn-send   { flex:2; background:#00c4b4; color:#fff; border:none; padding:14px; border-radius:12px; font-size:0.88rem; font-weight:900; cursor:pointer; font-family:inherit; }
 
+    /* ══ 픽업 완료 화면 ══ */
+    #pickupSuccessScreen {
+      background: #00c4b4;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      flex-direction: column;
+    }
+    .ps-icon { font-size: 5.5rem; animation: psPopIn 0.45s cubic-bezier(0.36,0.07,0.19,0.97) both; }
+    .ps-store { font-size: 1rem; font-weight: 700; color: rgba(255,255,255,0.8); margin-top: 18px; letter-spacing: -0.3px; }
+    .ps-text  { font-size: 2.6rem; font-weight: 900; color: #fff; margin-top: 4px; letter-spacing: -1px; }
+    .ps-sub   { font-size: 0.82rem; color: rgba(255,255,255,0.65); margin-top: 10px; }
+    @keyframes psPopIn {
+      0%   { transform: scale(0.2) rotate(-15deg); opacity: 0; }
+      60%  { transform: scale(1.18) rotate(5deg);  opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+
     /* ══ ⑪ 완료 ══ */
     #doneScreen { background:#fff; }
     .done-top { background:#00c4b4; padding:44px 24px 36px; text-align:center; color:#fff; }
@@ -289,7 +307,7 @@
     .ai-card-txt { font-size:0.82rem; color:#555; margin-top:4px; line-height:1.5; }
 
     /* ══ 픽업 메뉴 체크리스트 ══ */
-    .pickup-body { padding:20px; overflow-y:auto; flex:1; }
+    .pickup-body { padding:20px; overflow-y:auto; flex:1; -webkit-overflow-scrolling:touch; }
     .pickup-dest-lbl { font-size:0.75rem; color:#aaa; font-weight:700; letter-spacing:0.5px; margin-bottom:6px; }
     .pickup-dest { font-size:1.6rem; font-weight:900; margin-bottom:4px; }
     .pickup-count { font-size:0.88rem; color:#555; font-weight:700; margin-bottom:14px; }
@@ -583,8 +601,16 @@
     <div class="qr-guide">카메라를 QR 코드에 가까이 가져다 대세요</div>
   </div>
   <div class="qr-bottom">
-    <button class="btn-qr-manual" onclick="onQRSuccess()">강사님 확인 후 수동 완료</button>
+    <button class="btn-qr-manual" onclick="stopQR();onQRSuccess();">강사님 확인 후 수동 완료</button>
   </div>
+</div>
+
+<!-- 픽업 완료 오버레이 (fixed, screen 시스템 독립) -->
+<div id="pickupOverlay" style="display:none;position:fixed;inset:0;background:#00c4b4;z-index:9999;flex-direction:column;justify-content:center;align-items:center;text-align:center;">
+  <div class="ps-icon" id="psIcon">✅</div>
+  <div class="ps-store" id="psStore"></div>
+  <div class="ps-text">픽업 완료!</div>
+  <div class="ps-sub">잠시 후 배달 화면으로 이동합니다…</div>
 </div>
 
 <!-- ⑨ 전달지 이동 -->
@@ -825,9 +851,11 @@ function acceptOrder() { clearInterval(acceptCountdown); show('pickupScreen'); }
 function rejectOrder()  { clearInterval(acceptCountdown); show('waitScreen'); }
 
 // ── QR 스캔 ──
+let qrLock = false;
 // iOS Safari: html5-qrcode가 내부적으로 enumerateDevices()를 먼저 호출해 제스처 컨텍스트를 소모함.
 // 라이브러리 시작 전에 getUserMedia를 직접 호출해 권한을 미리 획득한 뒤 트랙을 해제한다.
 async function goQR() {
+  qrLock = false;
   show('qrScreen');
   if (typeof Html5Qrcode === 'undefined') return;
   stopQR();
@@ -856,7 +884,14 @@ async function goQR() {
   activeQR.start(
     { facingMode: 'environment' },
     { fps: 10, qrbox: { width: 220, height: 220 } },
-    () => { stopQR(); onQRSuccess(); },
+    () => {
+      if (qrLock) return;
+      qrLock = true;
+      const qr = activeQR;
+      activeQR = null;
+      if (qr) qr.stop().catch(() => {});
+      onQRSuccess();
+    },
     () => {}
   ).catch(err => {
     const guide = document.querySelector('.qr-guide');
@@ -884,21 +919,31 @@ function stopQR() {
 }
 
 function onQRSuccess() {
-  stopQR();
-  raceStartTime = Date.now();
-  const btnQR = document.getElementById('btnQR');
-  if (btnQR) btnQR.classList.remove('show');
-  // 전달지 화면에 담은 메뉴 칩 표시
-  if (myOrder) {
-    const r = RESTAURANTS[myRest];
-    const chips = document.getElementById('deliverMenuChips');
-    if (chips) chips.innerHTML = myOrder.items.map(item => {
-      const px = (item.col/4*100).toFixed(2), py = (r.row/3*100).toFixed(2);
-      return `<span class="deliver-chip"><span style="display:inline-block;width:22px;height:22px;border-radius:50%;background-image:url('food.png');background-size:500% 400%;background-position:${px}% ${py}%;vertical-align:middle;margin-right:4px;"></span>${item.name}</span>`;
-    }).join('');
-  }
-  startDeliverTimer();
-  show('deliverScreen');
+  const STORE_EMOJI = { '분식':'🍢', '한식':'🍚', '일식중식':'🍱', '양식':'🍝' };
+  const r = RESTAURANTS[myRest];
+
+  // fixed 오버레이 표시
+  const overlay = document.getElementById('pickupOverlay');
+  document.getElementById('psIcon').textContent = STORE_EMOJI[myRest] || '✅';
+  document.getElementById('psStore').textContent = r ? r.name : '';
+  overlay.style.display = 'flex';
+
+  setTimeout(() => {
+    overlay.style.display = 'none';
+    raceStartTime = Date.now();
+    const btnQR = document.getElementById('btnQR');
+    if (btnQR) btnQR.classList.remove('show');
+    if (myOrder) {
+      const r2 = RESTAURANTS[myRest];
+      const chips = document.getElementById('deliverMenuChips');
+      if (chips) chips.innerHTML = myOrder.items.map(item => {
+        const px = (item.col/4*100).toFixed(2), py = (r2.row/3*100).toFixed(2);
+        return `<span class="deliver-chip"><span style="display:inline-block;width:22px;height:22px;border-radius:50%;background-image:url('food.png');background-size:500% 400%;background-position:${px}% ${py}%;vertical-align:middle;margin-right:4px;"></span>${item.name}</span>`;
+      }).join('');
+    }
+    startDeliverTimer();
+    show('deliverScreen');
+  }, 2200);
 }
 
 // ── 배달 타이머 ──
