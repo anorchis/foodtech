@@ -1,6 +1,7 @@
 package com.baemin.rider;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.webkit.PermissionRequest;
@@ -8,11 +9,8 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends Activity {
 
     private WebView webView;
     private static final int CAMERA_PERMISSION_REQUEST = 100;
@@ -44,10 +42,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onPermissionRequest(final PermissionRequest request) {
                 pendingPermissionRequest = request;
-                if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.CAMERA)
+                if (checkSelfPermission(Manifest.permission.CAMERA)
                         != PackageManager.PERMISSION_GRANTED) {
-                    ActivityCompat.requestPermissions(
-                            MainActivity.this,
+                    requestPermissions(
                             new String[]{Manifest.permission.CAMERA},
                             CAMERA_PERMISSION_REQUEST);
                 } else {
