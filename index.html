@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="light only">
   <title>배민 라이더 체험</title>
   <meta property="og:title" content="배민 라이더 체험">
-  <meta property="og:description" content="엠봇과 함께하는 AI 배달 체험! 직접 라이더가 되어보세요 🚀">
+  <meta property="og:description" content="카미봇과 함께하는 AI 배달 체험! 직접 라이더가 되어보세요 🚀">
   <meta property="og:image" content="og.png">
   <meta property="og:type" content="website">
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -315,6 +315,41 @@
     .menu-card-check { width:22px; height:22px; border-radius:50%; border:2px solid #ddd; display:flex; align-items:center; justify-content:center; font-size:0.72rem; transition:all 0.15s; color:transparent; }
     .menu-card.checked .menu-card-check { background:#00c4b4; border-color:#00c4b4; color:#fff; }
 
+    /* ══ 픽업/배달 대형 안내문 ══ */
+    .big-notice {
+      background: linear-gradient(135deg, #00c4b4 0%, #009e90 100%);
+      color: #fff;
+      border-radius: 20px;
+      padding: 28px 20px 24px;
+      text-align: center;
+      margin-bottom: 18px;
+      box-shadow: 0 6px 24px rgba(0,196,180,0.35);
+      animation: noticeGlow 2s ease-in-out infinite alternate;
+    }
+    @keyframes noticeGlow {
+      from { box-shadow: 0 6px 24px rgba(0,196,180,0.35); }
+      to   { box-shadow: 0 8px 32px rgba(0,196,180,0.65); }
+    }
+    .big-notice-main {
+      font-size: 2rem;
+      font-weight: 900;
+      line-height: 1.25;
+      letter-spacing: -0.5px;
+    }
+    .big-notice-sub {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-top: 14px;
+      opacity: 0.93;
+      line-height: 1.5;
+      background: rgba(255,255,255,0.18);
+      border-radius: 12px;
+      padding: 10px 14px;
+    }
+    /* 픽업/배달 화면 바텀시트 더 크게 */
+    #pickupScreen .bottom-sheet,
+    #deliverScreen .bottom-sheet { padding-top: 20px; padding-bottom: 48px; }
+
     /* ══ 전달지 화면 개선 ══ */
     .deliver-label { font-size:0.75rem; color:#aaa; font-weight:700; letter-spacing:0.5px; margin-bottom:6px; }
     .deliver-dest { font-size:1.7rem; font-weight:900; margin-bottom:2px; }
@@ -362,7 +397,7 @@
 <div id="selectScreen" class="screen active">
   <div class="select-header">
     <div class="logo">배민 라이더</div>
-    <div class="sub">엠봇 라이더 체험 부스</div>
+    <div class="sub">카미봇 라이더 체험 부스</div>
   </div>
   <div class="select-body">
     <div class="select-title">내 식당을 선택하세요</div>
@@ -370,19 +405,19 @@
     <div class="rest-list">
       <div class="rest-item" onclick="selectRest('분식')">
         <span class="ri-emoji">🍢</span>
-        <div><div class="ri-name">분식당 삼전점</div><div class="ri-items">떡볶이 · 순대 · 튀김 · 라면 · 김밥</div></div>
+        <div><div class="ri-name">분식당 꿈트리점</div><div class="ri-items">떡볶이 · 순대 · 튀김 · 라면 · 김밥</div></div>
       </div>
       <div class="rest-item" onclick="selectRest('한식')">
         <span class="ri-emoji">🍚</span>
-        <div><div class="ri-name">한식당 삼전점</div><div class="ri-items">비빔밥 · 된장찌개 · 불고기 · 냉면 · 제육볶음</div></div>
+        <div><div class="ri-name">한식당 꿈트리점</div><div class="ri-items">비빔밥 · 된장찌개 · 불고기 · 냉면 · 제육볶음</div></div>
       </div>
       <div class="rest-item" onclick="selectRest('일식중식')">
         <span class="ri-emoji">🍣</span>
-        <div><div class="ri-name">일중식당 삼전점</div><div class="ri-items">초밥 · 라멘 · 짜장면 · 짬뽕 · 마라탕</div></div>
+        <div><div class="ri-name">일중식당 꿈트리점</div><div class="ri-items">초밥 · 라멘 · 짜장면 · 짬뽕 · 마라탕</div></div>
       </div>
       <div class="rest-item" onclick="selectRest('양식')">
         <span class="ri-emoji">🍝</span>
-        <div><div class="ri-name">양식당 삼전점</div><div class="ri-items">파스타 · 피자 · 스테이크 · 햄버거 · 리조또</div></div>
+        <div><div class="ri-name">양식당 꿈트리점</div><div class="ri-items">파스타 · 피자 · 스테이크 · 햄버거 · 리조또</div></div>
       </div>
     </div>
   </div>
@@ -407,7 +442,7 @@
       <span class="helmet-icon">⛑️</span>
       <div class="helmet-text">
         <strong>안전을 위해 꼭 확인하세요!</strong>
-        안전모를 착용하고 mBot2 로봇 경로를 확인해주세요.
+        안전모를 착용하고 카미봇 경로를 확인해주세요.
       </div>
     </div>
     <div class="start-name"><span id="lbl_start3">분식</span> 라이더님,<br>준비되셨나요?</div>
@@ -429,7 +464,7 @@
         <div class="wait-icon">🛵</div>
         <div class="wait-text">배차 대기 중</div>
         <div class="wait-sub">AI가 최적의 배달을 찾고 있어요</div>
-        <div class="rest-chip" id="waitChip">📍 분식당 삼전점</div>
+        <div class="rest-chip" id="waitChip">📍 분식당 꿈트리점</div>
       </div>
       <button class="btn-ai" onclick="startAI()">🤖 AI 추천 배차 받기</button>
     </div>
@@ -464,7 +499,7 @@
       <div class="order-route">
         <div class="route-row">
           <div class="dot-pick"></div><div class="route-lbl">픽업</div>
-          <div><div class="route-nm" id="oPickupNm">분식당 삼전점</div><div class="route-ad" id="oPickupAd">배민로 12-34</div></div>
+          <div><div class="route-nm" id="oPickupNm">분식당 꿈트리점</div><div class="route-ad" id="oPickupAd">배민로 12-34</div></div>
         </div>
         <div class="route-row">
           <div class="dot-dest"></div><div class="route-lbl">전달</div>
@@ -493,11 +528,11 @@
     <div class="bottom-sheet">
       <div class="sheet-handle"></div>
       <div class="pickup-dir-badge">📦 픽업지로 이동해주세요</div>
-      <div class="pickup-store-nm" id="pickupNm">분식당 삼전점</div>
+      <div class="pickup-store-nm" id="pickupNm">분식당 꿈트리점</div>
       <div class="pickup-menu-badge">담을 메뉴 <span id="pickupCount">0</span>개</div>
-      <div class="tip-box">
-        <strong>🤖 엠봇을 조종해서 가게로 이동해주세요!</strong><br>
-        가게 도착 후 버튼을 눌러 메뉴를 확인하세요.
+      <div class="big-notice">
+        <div class="big-notice-main">🤖 카미봇을 조종해서<br>가게로 이동해주세요!</div>
+        <div class="big-notice-sub">가게 도착 후 버튼을 눌러<br>메뉴를 확인하세요.</div>
       </div>
       <button class="btn-teal" onclick="show('detailScreen')">🏪 가게 도착</button>
     </div>
@@ -519,7 +554,7 @@
     </div>
     <div class="info-card">
       <div class="o-num" id="dOrderNum">주문번호: #-----</div>
-      <div class="o-store" id="dStoreName">분식당 삼전점</div>
+      <div class="o-store" id="dStoreName">분식당 꿈트리점</div>
       <div style="margin-top:12px;margin-bottom:6px;font-size:0.72rem;color:#aaa;font-weight:700;letter-spacing:0.5px;">🧺 메뉴 체크리스트 — 담으면 탭!<span class="checklist-progress" id="checkProgress"></span></div>
       <div class="checklist-list" id="detailMenuGrid"></div>
       <div class="o-item" style="margin-top:10px;margin-bottom:10px;border-bottom:none;">
@@ -572,9 +607,9 @@
         <div class="deliver-menu-lbl">🧺 담은 메뉴</div>
         <div class="deliver-menu-chips" id="deliverMenuChips"></div>
       </div>
-      <div class="tip-box">
-        <strong>🤖 엠봇을 조종해 배달을 시작해주세요!</strong><br>
-        강사님 자리에 도착하면 아래 버튼을 눌러주세요.
+      <div class="big-notice">
+        <div class="big-notice-main">🤖 카미봇을 조종해<br>배달을 시작해주세요!</div>
+        <div class="big-notice-sub">강사님 자리에 도착하면<br>아래 버튼을 눌러주세요.</div>
       </div>
       <button class="btn-teal" onclick="goPhoto()">📸 사진 촬영 후 인증 완료</button>
     </div>
@@ -652,10 +687,10 @@
 
 // row: 식당 행(0~3), col: 메뉴 열(0~4) — food.png 스프라이트 위치
 const RESTAURANTS = {
-  '분식':    { name:'분식당 삼전점',   addr:'배민로 12-34',    row:0, menus:[{name:'떡볶이',price:8500,col:0},{name:'순대',price:7000,col:1},{name:'튀김',price:6000,col:2},{name:'라면',price:7500,col:3},{name:'김밥',price:5000,col:4}] },
-  '한식':    { name:'한식당 삼전점',   addr:'라이더길 56-7',   row:1, menus:[{name:'비빔밥',price:9000,col:0},{name:'된장찌개',price:8000,col:1},{name:'불고기',price:13000,col:2},{name:'냉면',price:10000,col:3},{name:'제육볶음',price:11000,col:4}] },
-  '일식중식': { name:'일중식당 삼전점', addr:'우아한로 89-2',   row:2, menus:[{name:'초밥',price:15000,col:0},{name:'라멘',price:12000,col:1},{name:'짜장면',price:7000,col:2},{name:'짬뽕',price:8500,col:3},{name:'마라탕',price:14000,col:4}] },
-  '양식':    { name:'양식당 삼전점',   addr:'배달의민족로 33', row:3, menus:[{name:'파스타',price:13000,col:0},{name:'피자',price:16000,col:1},{name:'스테이크',price:22000,col:2},{name:'햄버거',price:11000,col:3},{name:'리조또',price:14000,col:4}] },
+  '분식':    { name:'분식당 꿈트리점',   addr:'배민로 12-34',    row:0, menus:[{name:'떡볶이',price:8500,col:0},{name:'순대',price:7000,col:1},{name:'튀김',price:6000,col:2},{name:'라면',price:7500,col:3},{name:'김밥',price:5000,col:4}] },
+  '한식':    { name:'한식당 꿈트리점',   addr:'라이더길 56-7',   row:1, menus:[{name:'비빔밥',price:9000,col:0},{name:'된장찌개',price:8000,col:1},{name:'불고기',price:13000,col:2},{name:'냉면',price:10000,col:3},{name:'제육볶음',price:11000,col:4}] },
+  '일식중식': { name:'일중식당 꿈트리점', addr:'우아한로 89-2',   row:2, menus:[{name:'초밥',price:15000,col:0},{name:'라멘',price:12000,col:1},{name:'짜장면',price:7000,col:2},{name:'짬뽕',price:8500,col:3},{name:'마라탕',price:14000,col:4}] },
+  '양식':    { name:'양식당 꿈트리점',   addr:'배달의민족로 33', row:3, menus:[{name:'파스타',price:13000,col:0},{name:'피자',price:16000,col:1},{name:'스테이크',price:22000,col:2},{name:'햄버거',price:11000,col:3},{name:'리조또',price:14000,col:4}] },
 };
 
 const MAP_SCREENS    = ['waitScreen','orderScreen','pickupScreen','deliverScreen'];
