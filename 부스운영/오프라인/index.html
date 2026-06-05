@@ -31,7 +31,7 @@
 
     .screen { display: none; min-height: 100vh; min-height: 100dvh; flex-direction: column; position: relative; background:#fff; overflow-y: auto; -webkit-overflow-scrolling: touch; }
     .screen.active { display: flex; }
-    .screen.map-screen { background: transparent !important; }
+    .screen.map-screen { background: transparent !important; overflow: visible; }
 
     /* 지도 배경 */
     .map-bg {
@@ -101,7 +101,9 @@
       box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
       padding: 16px 20px 40px;
     }
-    .sheet-handle { width: 40px; height: 4px; background: #ddd; border-radius: 2px; margin: 0 auto 16px; }
+    .sheet-handle { display: none; }
+    .btn-settings { background: none; border: none; cursor: pointer; font-size: 1.1rem; padding: 4px 6px; color: #bbb; line-height: 1; }
+    .btn-settings:active { color: #555; }
     .map-float { flex:1; position:relative; z-index:1; display:flex; align-items:flex-end; }
 
     /* 공통 버튼 */
@@ -447,6 +449,7 @@
   <div class="top-bar">
     <div class="rider-name"><span id="lbl_start">분식</span> 라이더님</div>
     <div class="toggle-wrap"><span class="toggle-label">신규배차</span><div class="toggle"></div></div>
+    <button class="btn-settings" onclick="confirmReload()">⚙️</button>
   </div>
   <div class="rider-map-area">
     <div class="start-rider-char">
@@ -475,6 +478,7 @@
   <div class="top-bar">
     <div class="rider-name"><span id="lbl_wait">분식</span> 라이더님</div>
     <div class="toggle-wrap"><span class="toggle-label">신규배차</span><div class="toggle"></div></div>
+    <button class="btn-settings" onclick="confirmReload()">⚙️</button>
   </div>
   <div class="map-float">
     <div class="bottom-sheet">
@@ -495,6 +499,7 @@
   <div class="top-bar">
     <div class="rider-name"><span id="lbl_ai">분식</span> 라이더님</div>
     <div class="toggle-wrap"><span class="toggle-label">신규배차</span><div class="toggle"></div></div>
+    <button class="btn-settings" onclick="confirmReload()">⚙️</button>
   </div>
   <div class="ai-analyze">
     <div class="ai-bot">🤖</div>
@@ -510,6 +515,7 @@
   <div class="top-bar">
     <div class="rider-name"><span id="lbl_order">분식</span> 라이더님</div>
     <div class="toggle-wrap"><span class="toggle-label">신규배차</span><div class="toggle"></div></div>
+    <button class="btn-settings" onclick="confirmReload()">⚙️</button>
   </div>
   <div class="map-float">
     <div class="bottom-sheet">
@@ -542,6 +548,7 @@
   <div class="top-bar">
     <div class="rider-name"><span id="lbl_pickup">분식</span> 라이더님</div>
     <div class="toggle-wrap"><span class="toggle-label">신규배차</span><div class="toggle"></div></div>
+    <button class="btn-settings" onclick="confirmReload()">⚙️</button>
   </div>
   <div class="map-float">
     <div class="bottom-sheet">
@@ -619,6 +626,7 @@
   <div class="top-bar">
     <div class="rider-name">배달 중 🚀</div>
     <div class="toggle-wrap"><span class="toggle-label">신규배차</span><div class="toggle"></div></div>
+    <button class="btn-settings" onclick="confirmReload()">⚙️</button>
   </div>
   <div class="map-float">
     <div class="bottom-sheet bottom-sheet-scroll">
@@ -1030,6 +1038,10 @@ function finishDelivery() {
 }
 
 function resetGame() { myOrder = null; raceStartTime = null; show('waitScreen'); }
+
+function confirmReload() {
+  if (confirm('앱을 처음부터 다시 시작할까요?')) location.reload();
+}
 </script>
 </body>
 </html>
