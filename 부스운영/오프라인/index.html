@@ -26,9 +26,10 @@
       .select-header, .done-top { background-color: #00c4b4 !important; }
     }
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-    body { font-family: 'Noto Sans KR', sans-serif; background: #f4f4f4; color: #222; min-height: 100vh; overflow-x: hidden; }
+    html { height: 100%; }
+    body { font-family: 'Noto Sans KR', sans-serif; background: #f4f4f4; color: #222; min-height: 100vh; min-height: 100dvh; overflow-x: hidden; }
 
-    .screen { display: none; min-height: 100vh; flex-direction: column; position: relative; background:#fff; }
+    .screen { display: none; min-height: 100vh; min-height: 100dvh; flex-direction: column; position: relative; background:#fff; overflow-y: auto; -webkit-overflow-scrolling: touch; }
     .screen.active { display: flex; }
     .screen.map-screen { background: transparent !important; }
 
@@ -116,7 +117,7 @@
     .select-header { background:#00c4b4; padding:28px 20px 24px; color:#fff; text-align:center; }
     .select-header .logo { font-size:1.9rem; font-weight:900; letter-spacing:-1px; }
     .select-header .sub { font-size:0.85rem; opacity:0.8; margin-top:4px; }
-    .select-body { padding:20px; }
+    .select-body { padding:20px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
     .select-title { font-size:1.1rem; font-weight:900; margin-bottom:4px; }
     .select-sub { font-size:0.8rem; color:#888; margin-bottom:20px; }
     .rest-list { display:flex; flex-direction:column; gap:10px; }
@@ -297,7 +298,7 @@
     .done-emoji { font-size:4rem; margin-bottom:12px; }
     .done-top h1 { font-size:1.6rem; font-weight:900; }
     .done-top p  { font-size:0.85rem; opacity:0.85; margin-top:6px; line-height:1.6; }
-    .done-body { padding:24px 20px; }
+    .done-body { padding:24px 20px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
     .time-card { background:#f8f8f8; border-radius:14px; padding:24px; margin-bottom:16px; text-align:center; }
     .time-label { font-size:0.75rem; color:#aaa; font-weight:700; letter-spacing:0.5px; }
     .time-value { font-size:3rem; font-weight:900; color:#00c4b4; margin-top:6px; line-height:1; }
