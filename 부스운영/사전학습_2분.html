@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>배달 로봇 사전학습 (2분)</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; background: #0a0a0a; font-family: 'Noto Sans KR', sans-serif; overflow: hidden; color: #fff; }
+
+    /* ── 슬라이드 ── */
+    .slide {
+      display: none;
+      position: fixed; inset: 0;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 40px 36px;
+      cursor: pointer;
+      user-select: none;
+      background: #0a0a0a;
+    }
+    .slide.active { display: flex; }
+
+    /* 번쩍 전환 */
+    @keyframes flashIn {
+      0%   { opacity: 0; }
+      8%   { opacity: 1; background: #1a1a1a; }
+      100% { opacity: 1; background: #0a0a0a; }
+    }
+    .slide.active { animation: flashIn 0.35s ease-out; }
+
+    /* ── 진행 점 ── */
+    .dots {
+      position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 8px; z-index: 10;
+    }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #333; transition: background 0.3s, transform 0.3s;
+    }
+    .dot.active { background: #39ff14; transform: scale(1.3); }
+    .dot.done { background: #1a7a00; }
+
+    /* ── 타이포 ── */
+    .tag {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 2px;
+      color: #39ff14; margin-bottom: 18px; text-transform: uppercase;
+    }
+    .big-num {
+      font-size: 6rem; font-weight: 900; line-height: 1;
+      color: #111; -webkit-text-stroke: 2px #222;
+      position: absolute; top: 32px; right: 36px;
+      user-select: none; pointer-events: none;
+    }
+    .main-title {
+      font-size: 2.4rem; font-weight: 900; line-height: 1.2;
+      letter-spacing: -1px; text-align: center; margin-bottom: 20px;
+      word-break: keep-all;
+    }
+    .main-title em { color: #39ff14; font-style: normal; }
+    .sub-text {
+      font-size: 1rem; color: #888; line-height: 1.9; text-align: center;
+      font-weight: 500; word-break: keep-all;
+    }
+    .sub-text strong { color: #ddd; font-weight: 700; }
+    .sub-text em { color: #39ff14; font-style: normal; font-weight: 700; }
+
+    /* ── 키워드 칩 ── */
+    .chip-wrap { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 24px; }
+    .chip {
+      border: 1.5px solid #333; border-radius: 100px;
+      padding: 8px 18px; font-size: 0.88rem; font-weight: 700; color: #aaa;
+      transition: all 0.2s;
+    }
+    .chip.lit { border-color: #39ff14; color: #39ff14; background: rgba(57,255,20,0.07); }
+
+    /* ── 비교 카드 ── */
+    .compare-wrap { display: flex; gap: 14px; width: 100%; margin-top: 28px; }
+    .compare-card {
+      flex: 1; border-radius: 18px; padding: 22px 16px;
+      display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;
+    }
+    .compare-card.a {
+      background: rgba(57,255,20,0.07);
+      border: 1.5px solid #39ff14;
+    }
+    .compare-card.b {
+      background: #141414;
+      border: 1.5px solid #333;
+    }
+    .c-emoji { font-size: 2.8rem; }
+    .c-label { font-size: 0.68rem; font-weight: 900; letter-spacing: 1px; color: #555; }
+    .c-label.lit { color: #39ff14; }
+    .c-title { font-size: 1.1rem; font-weight: 900; color: #fff; }
+    .c-desc { font-size: 0.8rem; color: #666; line-height: 1.7; }
+
+    /* ── 하단 힌트 ── */
+    .hint {
+      position: fixed; bottom: 24px; right: 28px;
+      font-size: 0.72rem; color: #333; font-weight: 700;
+      letter-spacing: 0.5px;
+      animation: hintBlink 2.5s ease-in-out infinite;
+    }
+    .hint.last { color: #39ff14; }
+    @keyframes hintBlink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    /* ── 슬라이드 4 강조선 ── */
+    .neon-line {
+      width: 48px; height: 3px;
+      background: #39ff14;
+      border-radius: 2px;
+      margin: 0 auto 28px;
+      box-shadow: 0 0 12px #39ff14;
+    }
+  </style>
+</head>
+<body>
+
+<!-- 진행 점 -->
+<div class="dots">
+  <div class="dot" id="d0"></div>
+  <div class="dot" id="d1"></div>
+  <div class="dot" id="d2"></div>
+  <div class="dot" id="d3"></div>
+</div>
+
+<!-- ① 푸드테크 -->
+<div class="slide active" onclick="next()">
+  <div class="big-num">01</div>
+  <div class="tag">Food Tech</div>
+  <div class="main-title">음식에<br><em>기술</em>이 더해지면?</div>
+  <div class="sub-text">
+    <strong>Food + Technology</strong><br>
+    주문·조리·배달 전 과정이<br>기술로 바뀌고 있어요.
+  </div>
+  <div class="chip-wrap">
+    <div class="chip lit">배달 앱</div>
+    <div class="chip lit">AI 추천</div>
+    <div class="chip lit">배달 로봇</div>
+    <div class="chip">드론 배송</div>
+    <div class="chip">무인 주방</div>
+  </div>
+  <div class="hint">탭해서 다음 ▶</div>
+</div>
+
+<!-- ② 법 -->
+<div class="slide" onclick="next()">
+  <div class="big-num">02</div>
+  <div class="tag">Law · 2023</div>
+  <div class="main-title">로봇이 인도를<br>걸을 수 있게 됐다</div>
+  <div class="sub-text">
+    <em>2023년 11월</em>, 법이 바뀌었어요.<br>
+    배달 로봇이 공식 <strong>보행자</strong>로 인정받아<br>
+    인도와 횡단보도를 다닐 수 있게 됐죠.<br><br>
+    <strong>최대 15km/h</strong> · 너비 80cm 이하 · 무게 500kg 이하
+  </div>
+  <div class="hint">탭해서 다음 ▶</div>
+</div>
+
+<!-- ③ 로봇의 눈 -->
+<div class="slide" onclick="next()">
+  <div class="big-num">03</div>
+  <div class="tag">Sensor · AI</div>
+  <div class="main-title">로봇은 어떻게<br>세상을 <em>볼까</em>?</div>
+  <div class="sub-text">
+    사람처럼 눈이 있는 건 아니에요.<br>
+    <strong>카메라·라이다·초음파</strong> 센서로<br>
+    주변을 실시간으로 읽고 스스로 판단해요.
+  </div>
+  <div class="chip-wrap">
+    <div class="chip lit">사람 감지</div>
+    <div class="chip lit">신호등 인식</div>
+    <div class="chip lit">장애물 회피</div>
+    <div class="chip lit">경사·턱 판단</div>
+  </div>
+  <div class="hint">탭해서 다음 ▶</div>
+</div>
+
+<!-- ④ 자율주행 vs 원격조종 -->
+<div class="slide" onclick="restart()">
+  <div class="big-num">04</div>
+  <div class="tag">Today</div>
+  <div class="main-title" style="margin-bottom:8px;">실제 로봇 vs<br>오늘의 <em>카미봇</em></div>
+  <div class="neon-line"></div>
+  <div class="compare-wrap">
+    <div class="compare-card a">
+      <div class="c-emoji">🤖</div>
+      <div class="c-label lit">실제 배달 로봇</div>
+      <div class="c-title">자율주행</div>
+      <div class="c-desc">스스로 보고<br>판단하며 이동</div>
+    </div>
+    <div class="compare-card b">
+      <div class="c-emoji">🕹️</div>
+      <div class="c-label">오늘 체험</div>
+      <div class="c-title">원격 조종</div>
+      <div class="c-desc">여러분이 직접<br>카미봇을 조종</div>
+    </div>
+  </div>
+  <div class="hint last">탭하면 처음으로 ↩</div>
+</div>
+
+<script>
+  const TOTAL = 4;
+  let current = 0;
+
+  function updateDots() {
+    for (let i = 0; i < TOTAL; i++) {
+      const d = document.getElementById('d' + i);
+      d.className = 'dot' + (i < current ? ' done' : i === current ? ' active' : '');
+    }
+  }
+
+  function show(idx) {
+    document.querySelectorAll('.slide').forEach((el, i) => {
+      el.classList.toggle('active', i === idx);
+    });
+    current = idx;
+    updateDots();
+  }
+
+  function next() {
+    if (current < TOTAL - 1) show(current + 1);
+  }
+
+  function restart() { show(0); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); next(); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); if (current > 0) show(current - 1); }
+  });
+
+  updateDots();
+</script>
+</body>
+</html>
