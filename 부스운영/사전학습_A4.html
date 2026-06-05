@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>배달 로봇 사전학습 A4</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: #fff;
+      width: 210mm;
+      height: 297mm;
+      padding: 12mm;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    /* ── 상단 타이틀 ── */
+    .page-title {
+      text-align: center;
+      padding-bottom: 8mm;
+      border-bottom: 2.5px solid #00c4b4;
+      margin-bottom: 6mm;
+    }
+    .page-title h1 {
+      font-size: 18pt;
+      font-weight: 900;
+      color: #111;
+      letter-spacing: -0.5px;
+    }
+    .page-title h1 em { color: #00c4b4; font-style: normal; }
+    .page-title p {
+      font-size: 8.5pt;
+      color: #aaa;
+      margin-top: 3px;
+      font-weight: 500;
+    }
+
+    /* ── 2×2 그리드 ── */
+    .grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 5mm;
+    }
+
+    .card {
+      border: 1.5px solid #eee;
+      border-radius: 6mm;
+      padding: 7mm 7mm 6mm;
+      display: flex;
+      flex-direction: column;
+      gap: 4mm;
+    }
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      gap: 4mm;
+    }
+    .card-num {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: #00c4b4;
+      color: #fff;
+      font-size: 8pt;
+      font-weight: 900;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .card-tag {
+      font-size: 7pt;
+      font-weight: 900;
+      color: #00c4b4;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .card-emoji { font-size: 28pt; line-height: 1; }
+
+    .card-title {
+      font-size: 13pt;
+      font-weight: 900;
+      color: #111;
+      line-height: 1.3;
+      letter-spacing: -0.3px;
+    }
+    .card-title em { color: #00c4b4; font-style: normal; }
+
+    .card-desc {
+      font-size: 8.5pt;
+      color: #555;
+      line-height: 1.85;
+      font-weight: 500;
+    }
+    .card-desc strong { color: #111; font-weight: 700; }
+
+    /* ── 키워드 칩 ── */
+    .chips {
+      display: flex; flex-wrap: wrap; gap: 4px;
+      margin-top: auto;
+      padding-top: 3mm;
+      border-top: 1px solid #f0f0f0;
+    }
+    .chip {
+      border: 1px solid #00c4b4;
+      border-radius: 100px;
+      padding: 2px 8px;
+      font-size: 7pt;
+      font-weight: 700;
+      color: #00c4b4;
+    }
+
+    /* ── 인쇄 ── */
+    @media print {
+      body { margin: 0; }
+      @page { size: A4; margin: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page-title">
+    <h1>🤖 <em>푸드테크</em>와 배달 로봇</h1>
+    <p>배달 로봇 체험 전 미리 알아두어요</p>
+  </div>
+
+  <div class="grid">
+
+    <!-- ① 푸드테크 -->
+    <div class="card">
+      <div class="card-top">
+        <div class="card-num">1</div>
+        <div class="card-tag">Food Tech</div>
+      </div>
+      <div class="card-emoji">🍔💡</div>
+      <div class="card-title">푸드테크란?</div>
+      <div class="card-desc">
+        <strong>Food + Technology</strong><br>
+        음식 주문·조리·배달 전 과정이<br>기술로 바뀌고 있어요.
+      </div>
+      <div class="chips">
+        <span class="chip">배달 앱</span>
+        <span class="chip">AI 추천</span>
+        <span class="chip">배달 로봇</span>
+        <span class="chip">무인 주방</span>
+      </div>
+    </div>
+
+    <!-- ② 법 -->
+    <div class="card">
+      <div class="card-top">
+        <div class="card-num">2</div>
+        <div class="card-tag">Law · 2023</div>
+      </div>
+      <div class="card-emoji">⚖️</div>
+      <div class="card-title">로봇이 인도를<br>걸을 수 있게 됐어요</div>
+      <div class="card-desc">
+        <strong>2023년 11월</strong>, 배달 로봇이<br>
+        공식 <strong>보행자</strong>로 인정받았어요.<br>
+        최대 15km/h · 너비 80cm 이하
+      </div>
+      <div class="chips">
+        <span class="chip">보행자 지위</span>
+        <span class="chip">인도 주행</span>
+        <span class="chip">횡단보도</span>
+      </div>
+    </div>
+
+    <!-- ③ 센서 -->
+    <div class="card">
+      <div class="card-top">
+        <div class="card-num">3</div>
+        <div class="card-tag">Sensor · AI</div>
+      </div>
+      <div class="card-emoji">👁️</div>
+      <div class="card-title">로봇의 눈,<br>어떻게 볼까?</div>
+      <div class="card-desc">
+        카메라·라이다·초음파 센서로<br>
+        주변을 실시간으로 읽고<br>스스로 판단해요.
+      </div>
+      <div class="chips">
+        <span class="chip">사람 감지</span>
+        <span class="chip">신호등 인식</span>
+        <span class="chip">장애물 회피</span>
+      </div>
+    </div>
+
+    <!-- ④ 비교 -->
+    <div class="card">
+      <div class="card-top">
+        <div class="card-num">4</div>
+        <div class="card-tag">Today</div>
+      </div>
+      <div class="card-emoji">🆚</div>
+      <div class="card-title">실제 로봇 vs<br>오늘의 카미봇</div>
+      <div class="card-desc">
+        실제 배달 로봇은 <strong>자율주행</strong> —<br>
+        스스로 보고 판단해요.<br>
+        오늘 체험은 <strong>직접 원격 조종</strong>!
+      </div>
+      <div class="chips">
+        <span class="chip">자율주행</span>
+        <span class="chip">원격 조종</span>
+        <span class="chip">카미봇</span>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>
