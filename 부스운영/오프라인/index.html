@@ -29,7 +29,7 @@
     html { height: 100%; }
     body { font-family: 'Noto Sans KR', sans-serif; background: #f4f4f4; color: #222; min-height: 100vh; min-height: 100dvh; overflow-x: hidden; }
 
-    .screen { display: none; min-height: 100vh; min-height: 100dvh; flex-direction: column; position: relative; background:#fff; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    .screen { display: none; min-height: 100vh; min-height: 100dvh; min-height: var(--app-h, 100dvh); flex-direction: column; position: relative; background:#fff; overflow-y: auto; -webkit-overflow-scrolling: touch; }
     .screen.active { display: flex; }
     .screen.map-screen { background: transparent !important; overflow: visible; }
 
@@ -709,6 +709,13 @@
 </div>
 
 <script>
+// ── 실제 뷰포트 높이 (분할화면 대응) ──
+function updateAppHeight() {
+  document.documentElement.style.setProperty('--app-h', window.innerHeight + 'px');
+}
+window.addEventListener('resize', updateAppHeight);
+updateAppHeight();
+
 // ── 인앱 브라우저 감지 ──
 (function() {
   const ua = navigator.userAgent;
