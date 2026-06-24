@@ -17,6 +17,10 @@
 const SHEET_NAME = 'schedules';
 
 function doGet(e) {
+  if (!e || !e.parameter) {
+    return ContentService.createTextOutput('doGet은 URL로 접근해야 합니다. 배포 URL을 브라우저에서 열어 테스트하세요.')
+      .setMimeType(ContentService.MimeType.TEXT);
+  }
   const action = e.parameter.action;
   let result;
 
