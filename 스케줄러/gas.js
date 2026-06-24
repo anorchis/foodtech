@@ -38,8 +38,16 @@ function doGet(e) {
     result = { error: err.toString() };
   }
 
+  const json = JSON.stringify(result);
+  const callback = e.parameter.callback;
+  if (callback) {
+    // JSONP 방식 (CORS 우회)
+    return ContentService
+      .createTextOutput(`${callback}(${json})`)
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
   return ContentService
-    .createTextOutput(JSON.stringify(result))
+    .createTextOutput(json)
     .setMimeType(ContentService.MimeType.JSON);
 }
 
