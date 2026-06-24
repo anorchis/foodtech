@@ -35,6 +35,14 @@ function doGet(e) {
         e.parameter.slots,
         e.parameter.notes || ''
       );
+    } else if (action === 'ping') {
+      // 연결 테스트용
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      result = {
+        ok: true,
+        spreadsheet: ss ? ss.getName() : 'null',
+        sheets: ss ? ss.getSheets().map(s => s.getName()) : []
+      };
     } else {
       result = { error: '알 수 없는 action: ' + action };
     }
@@ -55,13 +63,8 @@ function doGet(e) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-/* ── 스프레드시트 가져오기 (시트 연결 & 스탠드얼론 모두 대응) ── */
+/* ── 스프레드시트 가져오기 (항상 '팀스케줄러DB' 고정 → 읽기/쓰기 일관성 보장) ── */
 function getSpreadsheet() {
-  try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    if (ss) return ss;
-  } catch(e) {}
-  // 스탠드얼론 배포일 경우: 같은 이름의 시트 검색 or 새로 생성
   const files = DriveApp.getFilesByName('팀스케줄러DB');
   if (files.hasNext()) return SpreadsheetApp.open(files.next());
   return SpreadsheetApp.create('팀스케줄러DB');
