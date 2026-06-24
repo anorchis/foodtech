@@ -120,33 +120,31 @@
 
     /* Grid */
     .grid-wrap {
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      padding: 12px 16px 0;
+      padding: 12px 8px 0;
     }
 
     table {
       border-collapse: separate;
       border-spacing: 2px;
-      min-width: 460px;
       width: 100%;
+      table-layout: fixed;
     }
 
     th {
-      font-size: 0.72rem;
+      font-size: 0.65rem;
       font-weight: 700;
       color: #64748B;
-      padding: 4px 0;
+      padding: 3px 0;
       text-align: center;
     }
 
-    .th-time { min-width: 46px; }
+    .th-time { width: 34px; }
 
     .time-cell {
-      font-size: 0.66rem;
+      font-size: 0.58rem;
       color: var(--muted);
       text-align: right;
-      padding-right: 6px;
+      padding-right: 3px;
       white-space: nowrap;
       vertical-align: middle;
     }
@@ -154,8 +152,8 @@
     .slot-wrap { padding: 0; }
 
     .slot {
-      height: 33px;
-      border-radius: 4px;
+      height: 26px;
+      border-radius: 3px;
       overflow: hidden;
       border: 1.5px solid var(--border);
       cursor: pointer;
