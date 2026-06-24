@@ -296,7 +296,15 @@ let data      = {};
 let saveTimer = null;
 let pollTimer = null;
 
-const WEEK_KEY = 'fixed';
+// 이번 주 월요일 UTC 기준 (한국에서 실행 시 기존 저장 데이터와 일치)
+function calcWeekKey() {
+  const d = new Date();
+  const day = d.getDay();
+  d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+  d.setHours(0,0,0,0);
+  return d.toISOString().slice(0,10);
+}
+const WEEK_KEY = calcWeekKey();
 
 /* ── 데이터 접근 ── */
 function isOn(name, day, time) {
