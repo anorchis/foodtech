@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>팀 스케줄러</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #F8FAFC;
+      --surface: #FFFFFF;
+      --border: #E2E8F0;
+      --text: #1E293B;
+      --muted: #94A3B8;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans KR', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 48px;
+    }
+
+    header {
+      background: #1E293B;
+      color: white;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    header h1 { font-size: 1rem; font-weight: 700; }
+
+    #saveStatus {
+      font-size: 0.7rem;
+      color: #94A3B8;
+    }
+
+    .section { padding: 14px 16px 0; }
+
+    .label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 8px;
+    }
+
+    .chip-group { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    .chip {
+      padding: 7px 16px;
+      border-radius: 100px;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: #475569;
+      transition: all 0.12s;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .chip:active { transform: scale(0.95); }
+    .chip.team-on { background: #1E293B; border-color: #1E293B; color: white; }
+
+    .week-row {
+      display: flex;
+      align-items: center;
+      padding: 14px 16px 0;
+      gap: 8px;
+    }
+
+    .week-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 12px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+
+    .week-label {
+      flex: 1;
+      text-align: center;
+      font-size: 0.86rem;
+      font-weight: 700;
+    }
+
+    /* Legend */
+    .legend {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 10px 16px 0;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.72rem;
+      color: #64748B;
+    }
+
+    .legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Grid */
+    .grid-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 12px 16px 0;
+    }
+
+    table {
+      border-collapse: separate;
+      border-spacing: 2px;
+      min-width: 460px;
+      width: 100%;
+    }
+
+    th {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #64748B;
+      padding: 4px 0;
+      text-align: center;
+    }
+
+    .th-time { min-width: 46px; }
+
+    .time-cell {
+      font-size: 0.66rem;
+      color: var(--muted);
+      text-align: right;
+      padding-right: 6px;
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+
+    .slot-wrap { padding: 0; }
+
+    .slot {
+      height: 33px;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1.5px solid var(--border);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .slot:hover { border-color: #94A3B8; }
+    .slot.ov3 { border-color: #22C55E !important; }
+    .slot.ov2 { border-color: #FCD34D !important; }
+
+    .strip {
+      flex: 1;
+      background: #F1F5F9;
+      transition: background 0.08s;
+    }
+
+    /* Notes */
+    .notes-wrap { padding: 14px 16px 0; }
+
+    .notes-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .note-card {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+    }
+
+    .note-name {
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    textarea {
+      width: 100%;
+      border: none;
+      outline: none;
+      resize: none;
+      font-size: 0.78rem;
+      font-family: inherit;
+      color: var(--text);
+      background: transparent;
+      height: 54px;
+      line-height: 1.5;
+    }
+
+    .setup-banner {
+      background: #FEF3C7;
+      border: 1px solid #FCD34D;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin: 12px 16px 0;
+      font-size: 0.8rem;
+      line-height: 1.7;
+      color: #92400E;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════
+  설정 방법
+  1. gas.js 내용을 복사
+  2. Google Sheets 열기 (새 시트)
+  3. 확장프로그램 > Apps Script
+  4. 붙여넣기 후 저장
+  5. 배포 > 새 배포 > 웹 앱
+     - 다음 사용자로 실행: 나
+     - 액세스 권한: 모든 사용자 (익명 포함)
+  6. 배포 URL 복사
+  7. 아래 API_URL 변수에 붙여넣기
+═══════════════════════════════════ -->
+
+<header>
+  <h1>📅 팀 스케줄러</h1>
+  <div id="saveStatus"></div>
+</header>
+
+<div id="setupBanner" class="setup-banner" style="display:none">
+  ⚙️ <strong>설정 필요</strong><br>
+  gas.js를 Google Apps Script에 배포하고,<br>
+  index.html의 <code>API_URL</code>에 배포 URL을 붙여넣어주세요.
+</div>
+
+<div class="section">
+  <div class="label">팀</div>
+  <div class="chip-group" id="teamChips"></div>
+</div>
+
+<div class="section">
+  <div class="label">나는</div>
+  <div class="chip-group" id="memberChips"></div>
+</div>
+
+<div class="week-row">
+  <button class="week-btn" onclick="changeWeek(-1)">◀</button>
+  <div class="week-label" id="weekLabel"></div>
+  <button class="week-btn" onclick="changeWeek(1)">▶</button>
+</div>
+
+<div class="legend" id="legend"></div>
+
+<div class="grid-wrap">
+  <table id="grid"></table>
+</div>
+
+<div class="notes-wrap">
+  <div class="label">비고</div>
+  <div class="notes-grid" id="notesGrid"></div>
+</div>
+
+<script>
+// ★ Apps Script 배포 후 아래 URL 교체 ★
+const API_URL = 'https://script.google.com/macros/s/AKfycbx9GGqVi57nhu_BVH0LYYmTWFcRf2gxA7YDJZa2OzJqz7HRT-45oHaLy_tlJO0v8k8SGA/exec';
+
+const TEAMS = {
+  'RGB':       ['태준', '도형', '주완'],
+  '브레인메이커스': ['준성', '진우', '여준'],
+  '인피니티':   ['예준', '주원', '건']
+};
+
+const COLORS = ['#3B82F6', '#F97316', '#10B981'];
+
+const DAYS    = ['월','화','수','목','금','토','일'];
+const DAYKEYS = ['mon','tue','wed','thu','fri','sat','sun'];
+
+// 10:00 ~ 21:30, 30분 단위
+const TIMES = [];
+for (let h = 10; h <= 21; h++) {
+  TIMES.push(`${h}:00`);
+  TIMES.push(`${h}:30`);
+}
+
+let curTeam   = 'RGB';
+let curMember = null;
+let curMonday = getMonday(new Date());
+let data      = {};   // { 이름: { slots: {mon:[...], ...}, notes: '' } }
+let saveTimer = null;
+let pollTimer = null;
+
+/* ── 날짜 유틸 ── */
+function getMonday(d) {
+  const x = new Date(d);
+  const day = x.getDay();
+  x.setDate(x.getDate() - (day === 0 ? 6 : day - 1));
+  x.setHours(0,0,0,0);
+  return x;
+}
+function weekKey(mon) { return mon.toISOString().slice(0,10); }
+function weekLabel(mon) {
+  const end = new Date(mon);
+  end.setDate(end.getDate() + 6);
+  const f = d => `${d.getMonth()+1}/${d.getDate()}`;
+  return `${mon.getFullYear()}년  ${f(mon)} ~ ${f(end)}`;
+}
+
+function changeWeek(dir) {
+  curMonday = getMonday(new Date(curMonday.getTime() + dir * 7 * 86400000));
+  document.getElementById('weekLabel').textContent = weekLabel(curMonday);
+  data = {};
+  load();
+}
+
+/* ── 데이터 접근 ── */
+function isOn(name, day, time) {
+  return data[name]?.slots?.[day]?.includes(time) ?? false;
+}
+
+function toggle(day, time) {
+  if (!curMember) { alert('먼저 이름을 선택해주세요!'); return; }
+  if (!data[curMember]) data[curMember] = { slots: {}, notes: '' };
+  if (!data[curMember].slots[day]) data[curMember].slots[day] = [];
+
+  const arr = data[curMember].slots[day];
+  const idx = arr.indexOf(time);
+  idx === -1 ? arr.push(time) : arr.splice(idx, 1);
+
+  renderGrid();
+  queueSave();
+}
+
+/* ── 렌더 ── */
+function renderTeams() {
+  const el = document.getElementById('teamChips');
+  el.innerHTML = '';
+  Object.keys(TEAMS).forEach(t => {
+    const c = document.createElement('button');
+    c.className = 'chip' + (t === curTeam ? ' team-on' : '');
+    c.textContent = t;
+    c.onclick = () => {
+      curTeam = t; curMember = null; data = {};
+      renderTeams(); renderMembers(); renderLegend(); load();
+    };
+    el.appendChild(c);
+  });
+}
+
+function renderMembers() {
+  const el = document.getElementById('memberChips');
+  el.innerHTML = '';
+  TEAMS[curTeam].forEach((name, i) => {
+    const c = document.createElement('button');
+    c.className = 'chip';
+    const on = name === curMember;
+    c.style.cssText = on
+      ? `background:${COLORS[i]};border-color:${COLORS[i]};color:#fff`
+      : `color:${COLORS[i]};border-color:${COLORS[i]}`;
+    c.textContent = name;
+    c.onclick = () => { curMember = name; renderMembers(); renderGrid(); renderNotes(); };
+    el.appendChild(c);
+  });
+}
+
+function renderLegend() {
+  const el = document.getElementById('legend');
+  el.innerHTML = '';
+  TEAMS[curTeam].forEach((name, i) => {
+    const item = document.createElement('div');
+    item.className = 'legend-item';
+    item.innerHTML = `<div class="legend-dot" style="background:${COLORS[i]}"></div>${name}`;
+    el.appendChild(item);
+  });
+  [['#F1F5F9','1명'],['#FCD34D','2명'],['#22C55E','전원']].forEach(([color,label]) => {
+    const item = document.createElement('div');
+    item.className = 'legend-item';
+    item.innerHTML = `<div class="legend-dot" style="background:${color};border:1px solid #cbd5e1"></div>${label} 가능`;
+    el.appendChild(item);
+  });
+}
+
+function renderGrid() {
+  const tbl = document.getElementById('grid');
+  tbl.innerHTML = '';
+  const members = TEAMS[curTeam];
+
+  /* 헤더 행 */
+  const hRow = document.createElement('tr');
+  const thBlank = document.createElement('th');
+  thBlank.className = 'th-time';
+  hRow.appendChild(thBlank);
+  DAYS.forEach(d => {
+    const th = document.createElement('th');
+    th.textContent = d;
+    hRow.appendChild(th);
+  });
+  tbl.appendChild(hRow);
+
+  /* 시간 행 */
+  TIMES.forEach(time => {
+    const tr = document.createElement('tr');
+
+    /* 시간 라벨 */
+    const tdTime = document.createElement('td');
+    tdTime.className = 'time-cell';
+    tdTime.textContent = time;
+    tr.appendChild(tdTime);
+
+    /* 요일 셀 */
+    DAYKEYS.forEach(day => {
+      const td = document.createElement('td');
+      td.className = 'slot-wrap';
+
+      const cnt = members.filter(n => isOn(n, day, time)).length;
+
+      const slot = document.createElement('div');
+      slot.className = 'slot' + (cnt === 3 ? ' ov3' : cnt === 2 ? ' ov2' : '');
+
+      members.forEach((name, i) => {
+        const strip = document.createElement('div');
+        strip.className = 'strip';
+        if (isOn(name, day, time)) {
+          // 현재 선택된 멤버는 진하게, 나머지는 반투명
+          strip.style.background = COLORS[i] + (name === curMember ? '' : '70');
+        }
+        slot.appendChild(strip);
+      });
+
+      slot.onclick = () => toggle(day, time);
+      td.appendChild(slot);
+      tr.appendChild(td);
+    });
+
+    tbl.appendChild(tr);
+  });
+}
+
+function renderNotes() {
+  const container = document.getElementById('notesGrid');
+  container.innerHTML = '';
+  TEAMS[curTeam].forEach((name, i) => {
+    const card = document.createElement('div');
+    card.className = 'note-card';
+    if (name === curMember) card.style.borderColor = COLORS[i];
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'note-name';
+    nameEl.style.color = COLORS[i];
+    nameEl.textContent = name;
+
+    const ta = document.createElement('textarea');
+    ta.placeholder = name === curMember ? '비고 입력...' : '';
+    ta.value = data[name]?.notes || '';
+    ta.readOnly = name !== curMember;
+
+    ta.oninput = () => {
+      if (!data[name]) data[name] = { slots: {}, notes: '' };
+      data[name].notes = ta.value;
+      queueSave();
+    };
+
+    card.appendChild(nameEl);
+    card.appendChild(ta);
+    container.appendChild(card);
+  });
+}
+
+/* ── API ── */
+function setStatus(txt) {
+  document.getElementById('saveStatus').textContent = txt;
+}
+
+function queueSave() {
+  setStatus('저장 중...');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(save, 800);
+}
+
+async function save() {
+  if (!curMember) return;
+  const md = data[curMember] || { slots: {}, notes: '' };
+  const params = new URLSearchParams({
+    action: 'write',
+    team: curTeam,
+    member: curMember,
+    week: weekKey(curMonday),
+    slots: JSON.stringify(md.slots),
+    notes: md.notes || ''
+  });
+  try {
+    await fetch(`${API_URL}?${params}`, { redirect: 'follow' });
+    const t = new Date().toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit' });
+    setStatus(`✓ ${t} 저장됨`);
+  } catch(e) {
+    setStatus('⚠ 저장 실패');
+  }
+  saveTimer = null;
+}
+
+async function load() {
+  if (API_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+    document.getElementById('setupBanner').style.display = 'block';
+    renderGrid(); renderNotes();
+    return;
+  }
+  document.getElementById('setupBanner').style.display = 'none';
+
+  const params = new URLSearchParams({
+    action: 'read',
+    team: curTeam,
+    week: weekKey(curMonday)
+  });
+  try {
+    const res = await fetch(`${API_URL}?${params}`, { redirect: 'follow' });
+    const arr = await res.json();
+    arr.forEach(item => {
+      data[item.member] = { slots: item.slots || {}, notes: item.notes || '' };
+    });
+  } catch(e) { /* 네트워크 오류 무시 */ }
+  renderGrid();
+  renderNotes();
+}
+
+function startPoll() {
+  clearInterval(pollTimer);
+  pollTimer = setInterval(() => {
+    if (!saveTimer) load(); // 저장 중 아닐 때만 갱신
+  }, 15000); // 15초마다 갱신
+}
+
+/* ── 초기화 ── */
+document.getElementById('weekLabel').textContent = weekLabel(curMonday);
+renderTeams();
+renderMembers();
+renderLegend();
+renderGrid();
+renderNotes();
+load();
+startPoll();
+</script>
+</body>
+</html>
