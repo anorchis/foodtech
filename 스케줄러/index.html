@@ -533,25 +533,46 @@ async function save() {
   saveTimer = null;
 }
 
-async function load() {
-  if (API_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
-    document.getElementById('setupBanner').style.display = 'block';
-    renderGrid(); renderNotes();
-    return;
-  }
-  document.getElementById('setupBanner').style.display = 'none';
+// 구글 시트 CSV 직접 읽기 (CORS 없음, 재배포 불필요)
+const SHEET_ID = '1rchFSyvzqagqECTWaJVENMK-1IhHM3KVZVeKNtPwMkY';
 
-  const params = new URLSearchParams({
-    action: 'read',
-    team: curTeam,
-    week: weekKey(curMonday)
-  });
+function parseCSV(text) {
+  const rows = [];
+  const lines = text.trim().split('\n');
+  for (const line of lines) {
+    // 쉼표 기준 파싱 (큰따옴표 안 쉼표 무시)
+    const cols = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') { inQ = !inQ; }
+      else if (c === ',' && !inQ) { cols.push(cur); cur = ''; }
+      else { cur += c; }
+    }
+    cols.push(cur);
+    rows.push(cols);
+  }
+  return rows;
+}
+
+async function load() {
+  document.getElementById('setupBanner').style.display = 'none';
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=schedules`;
   try {
-    const arr = await jsonp(`${API_URL}?${params}`);
-    if (arr.error) throw new Error(arr.error);
-    arr.forEach(item => {
-      data[item.member] = { slots: item.slots || {}, notes: item.notes || '' };
-    });
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    const rows = parseCSV(text);
+    const week = weekKey(curMonday);
+    // 헤더: team, member, week, slots, notes, updated
+    for (let i = 1; i < rows.length; i++) {
+      const [team, member, w, slotsStr, notes] = rows[i];
+      if (team === curTeam && w === week) {
+        let slots = {};
+        try { slots = JSON.parse(slotsStr || '{}'); } catch(_) {}
+        data[member] = { slots, notes: notes || '' };
+      }
+    }
     setStatus('');
   } catch(e) {
     setStatus('⚠ 불러오기 실패: ' + e.message);
