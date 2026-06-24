@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>프롬프트 빌더 — 게임 만들어줘!</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d0d20;--s1:#16162e;--s2:rgba(255,255,255,.06);--bd:rgba(255,255,255,.1);
+  --pu:#7c3aed;--pk:#ec4899;--cy:#06b6d4;--ye:#f59e0b;--gr:#10b981;--or:#f97316;
+  --tx:#f0f0ff;--mt:#94a3b8;
+}
+html,body{min-height:100%;background:var(--bg);color:var(--tx);font-family:'Noto Sans KR',sans-serif;overflow-x:hidden}
+
+.hero{text-align:center;padding:48px 24px 28px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-80px;left:50%;transform:translateX(-50%);width:600px;height:320px;background:radial-gradient(ellipse,rgba(124,58,237,.22),transparent 70%);pointer-events:none}
+.tag{font-family:'Space Grotesk',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#a78bfa;margin-bottom:8px}
+.hero h1{font-size:clamp(24px,4.5vw,48px);font-weight:900;line-height:1.15;margin-bottom:12px}
+.grd{background:linear-gradient(135deg,var(--pu),var(--pk));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{font-size:clamp(13px,1.5vw,17px);color:var(--mt);max-width:520px;margin:0 auto;line-height:1.7}
+
+.chat-wrap{max-width:760px;margin:0 auto;padding:0 20px 200px}
+
+.bubble-row{display:flex;gap:10px;margin-bottom:16px;align-items:flex-end;animation:bubbleIn .35s ease forwards}
+.bubble-row.user{justify-content:flex-end}
+.avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.avatar.ai{background:linear-gradient(135deg,var(--pu),var(--pk))}
+.avatar.user{background:linear-gradient(135deg,var(--ye),var(--or))}
+.bubble{max-width:80%;padding:12px 16px;border-radius:18px;font-size:clamp(13px,1.4vw,16px);line-height:1.6}
+.bubble.ai{background:var(--s1);border:1px solid var(--bd);border-bottom-left-radius:4px}
+.bubble.user{background:linear-gradient(135deg,rgba(124,58,237,.3),rgba(236,72,153,.2));border:1px solid rgba(236,72,153,.3);border-bottom-right-radius:4px;text-align:right}
+.default-badge{font-size:10px;color:#f59e0b;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.25);padding:2px 8px;border-radius:99px;margin-top:6px;display:inline-block}
+
+.input-block{margin-left:44px;margin-bottom:18px}
+.suggestion-list{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.suggestion-btn{padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);color:#e2e8f0;font-family:'Noto Sans KR',sans-serif;font-size:clamp(12px,1.25vw,14px);line-height:1.4;cursor:pointer;transition:all .2s}
+.suggestion-btn:hover{background:rgba(124,58,237,.18);border-color:rgba(167,139,250,.45);transform:translateY(-1px)}
+.input-row{display:flex;gap:8px;align-items:stretch}
+.text-input{flex:1;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.15);border-radius:12px;padding:12px 16px;font-size:clamp(13px,1.3vw,15px);font-family:'Noto Sans KR',sans-serif;color:var(--tx);outline:none;transition:border-color .2s,background .2s}
+.text-input:focus{border-color:var(--pu);background:rgba(124,58,237,.08)}
+.text-input::placeholder{color:rgba(255,255,255,.28)}
+.text-input:disabled{opacity:.4;cursor:not-allowed}
+.confirm-btn{padding:12px 20px;border-radius:12px;background:linear-gradient(135deg,var(--pu),var(--pk));color:#fff;border:none;font-weight:700;font-size:14px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all .2s;white-space:nowrap}
+.confirm-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 4px 16px rgba(124,58,237,.4)}
+.confirm-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.input-hint{font-size:11px;color:var(--mt);margin-top:7px}
+
+.ck1{color:#c084fc}.ck2{color:#f9a8d4}.ck3{color:#67e8f9}.ck4{color:#fcd34d}
+
+.prompt-bar{position:fixed;bottom:0;left:0;right:0;background:rgba(13,13,32,.96);backdrop-filter:blur(12px);border-top:1px solid var(--bd);z-index:100}
+.prompt-bar-inner{max-width:760px;margin:0 auto;padding:10px 20px}
+.prompt-bar-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.prompt-bar-label span{font-size:11px;color:var(--mt);font-family:'Space Grotesk',sans-serif;letter-spacing:1px}
+.prompt-text{font-size:clamp(11px,1.2vw,13px);line-height:1.9;color:var(--tx);min-height:24px;max-height:90px;overflow-y:auto}
+.prompt-text::-webkit-scrollbar{width:4px}
+.prompt-text::-webkit-scrollbar-thumb{background:rgba(124,58,237,.4);border-radius:2px}
+.chunk{display:inline;border-radius:3px;padding:1px 4px;margin:1px}
+.c0{background:rgba(255,255,255,.07);color:#94a3b8}
+.c1{background:rgba(124,58,237,.2);color:#c084fc}
+.c2{background:rgba(236,72,153,.2);color:#f9a8d4}
+.c3{background:rgba(6,182,212,.2);color:#67e8f9}
+.c4{background:rgba(245,158,11,.2);color:#fcd34d}
+.chunk-new{animation:chunkIn .35s ease forwards}
+
+@keyframes chunkIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@keyframes bubbleIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+.final-wrap{max-width:760px;margin:0 auto;padding:0 20px 120px}
+.copy-box{background:#0a0a1a;border:2px solid rgba(16,185,129,.4);border-radius:14px;padding:18px 22px;margin-top:16px}
+.copy-box pre{font-size:clamp(12px,1.3vw,14px);line-height:2;color:#e2e8f0;white-space:pre-wrap;word-break:break-word;font-family:'Noto Sans KR',sans-serif}
+.btn{padding:11px 26px;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer;border:none;font-family:'Noto Sans KR',sans-serif;transition:all .2s;display:inline-flex;align-items:center;gap:7px}
+.btn-green{background:linear-gradient(135deg,var(--gr),#059669);color:#fff;box-shadow:0 4px 18px rgba(16,185,129,.4)}
+.btn-green:hover{transform:translateY(-2px)}
+
+.confetti-wrap{position:fixed;inset:0;pointer-events:none;z-index:999;overflow:hidden}
+.confetti-piece{position:absolute;animation:fall linear forwards}
+@keyframes fall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:rgba(124,58,237,.4);border-radius:3px}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="tag">메타 프롬프트 · 게임 만들기</div>
+  <h1>메타 프롬프트<span class="grd">로<br>게임을 만들어보자</span></h1>
+  <p>AI가 질문할 거예요. 대답하다 보면<br>완성 프롬프트가 만들어져요!</p>
+</div>
+
+<div class="chat-wrap" id="chat"></div>
+<div class="final-wrap" id="final-section" style="display:none"></div>
+
+<div class="prompt-bar">
+  <div class="prompt-bar-inner">
+    <div class="prompt-bar-label">
+      <span id="prompt-bar-title">📝 내 프롬프트 (쌓이는 중...)</span>
+      <span style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:11px;color:var(--mt)" id="prompt-step-label">0 / 5 질문</span>
+        <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;color:#f59e0b;font-size:13px" id="prompt-pct">0%</span>
+      </span>
+    </div>
+    <div style="height:4px;background:rgba(255,255,255,.08);border-radius:99px;margin-bottom:8px;overflow:hidden">
+      <div id="pct-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--pu),var(--pk),var(--ye));border-radius:99px;transition:width .5s cubic-bezier(.34,1.56,.64,1)"></div>
+    </div>
+    <div class="prompt-text" id="prompt-display">
+      <span style="color:#444">← 답하다 보면 프롬프트가 쌓여요</span>
+    </div>
+  </div>
+</div>
+
+<div class="confetti-wrap" id="confetti"></div>
+
+<script>
+// ★ 선생님: 아래 API_KEY에 업스테이지 키를 넣어주세요
+const API_KEY = '%%UPSTAGE_KEY%%';
+
+const STEPS = [
+  {
+    ai: "너가 제일 좋아하는 게임이 뭐야? 🎮",
+    buildPrompt: ans => `${ans} 게임을 HTML로 만들어줘.`,
+    chunk: 'c1', ck: 'ck1'
+  },
+  {
+    ai: "그 게임의 장르가 뭐야?",
+    options: ['RPG','방탈출','퍼즐','액션','어드벤처','슈팅','플랫포머','전략','시뮬레이션','스포츠','레이싱','공포','샌드박스','연애 시뮬레이션','픽셀아트','3D','타워 디펜스'],
+    buildPrompt: ans => `장르: ${ans}.`,
+    chunk: 'c2', ck: 'ck2'
+  },
+  {
+    askBox: true,
+    autoConfirm: true,
+    askQ: genre => `${genre} 장르 게임의 특징이 뭐야?`,
+    buildPrompt: ans => `이 장르의 핵심 특징: ${ans}.`,
+    chunk: 'c2', ck: 'ck2'
+  },
+];
+
+const FIXED_CLOSE = "게임 인트로 화면이나 로딩 화면에 위에 적힌 장르의 핵심 특징을 텍스트로 보여줘. 먼저 이 게임을 HTML로 만들 수 있는지, 어떻게 구현할 수 있는지 설명해줘. Three.js나 Cannon.js 같은 라이브러리를 써도 돼. 코드는 바로 만들지 말고 구현 방법을 먼저 알려줘.";
+
+let currentStep = -1;
+let promptPieces = [];
+const chat = document.getElementById('chat');
+const promptDisplay = document.getElementById('prompt-display');
+
+function appendBubble(who, html){
+  const row = document.createElement('div');
+  row.className = `bubble-row ${who}`;
+  const av = document.createElement('div');
+  av.className = `avatar ${who}`;
+  av.textContent = who==='ai'?'🤖':'🙋';
+  const bub = document.createElement('div');
+  bub.className = `bubble ${who}`;
+  bub.innerHTML = html;
+  if(who==='ai'){row.appendChild(av);row.appendChild(bub);}
+  else{row.appendChild(bub);row.appendChild(av);}
+  chat.appendChild(row);
+  gsap.from(row,{opacity:0,y:14,duration:.3,ease:'power2.out'});
+  scrollToBottom();
+}
+
+function nextStep(){
+  currentStep++;
+  if(currentStep >= STEPS.length){ showFinal(); return; }
+  const step = STEPS[currentStep];
+  setTimeout(()=>{
+    if (step.ai) {
+      appendBubble('ai', step.ai);
+      setTimeout(()=> renderInput(currentStep), 300);
+    } else {
+      renderInput(currentStep);
+    }
+  }, 400);
+}
+
+async function renderDynamicQ(idx){
+  const step = STEPS[idx];
+  const genrePiece = promptPieces.find(p => p.text.startsWith('장르:'));
+  const genre = genrePiece ? genrePiece.text.replace('장르: ','').replace('.','') : '___';
+
+  // 로딩 버블
+  const loadRow = document.createElement('div');
+  loadRow.className = 'bubble-row ai';
+  loadRow.id = `dynload-${idx}`;
+  loadRow.innerHTML = `<div class="avatar ai">🤖</div><div class="bubble ai"><span style="animation:blink 1s infinite">● </span> 어떤 걸 만들지 생각 중...</div>`;
+  chat.appendChild(loadRow);
+  scrollToBottom();
+
+  let questions = [];
+  try {
+    const res = await fetch('https://api.upstage.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+      body: JSON.stringify({
+        model: 'solar-pro',
+        max_tokens: 400,
+        messages: [{ role: 'user', content:
+          `${genre} 장르 게임을 HTML로 만들 때 꼭 필요한 구성 요소 2~3가지를 골라줘. 초등학생 5학년이 바로 대답할 수 있을 만큼 쉽고 짧은 질문으로 만들어줘. 예: "주인공 이름은?", "적이 나와? 어떻게 생겼어?", "게임 배경이 어디야?". 반드시 JSON 배열만 답해줘(설명 없이): [{"key":"요소명","q":"질문"}]`
+        }]
+      })
+    });
+    const data = await res.json();
+    const raw = data.choices[0].message.content.trim();
+    const match = raw.match(/\[[\s\S]*\]/);
+    questions = JSON.parse(match ? match[0] : raw);
+  } catch(e) {
+    questions = [
+      { key: '주인공', q: '주인공은 어떤 캐릭터야?' },
+      { key: '핵심 기능', q: '게임에서 제일 중요한 기능이 뭐야?' },
+      { key: '목표', q: '게임의 목표가 뭐야?' }
+    ];
+  }
+
+  loadRow.remove();
+  const answers = {};
+
+  // 질문 순서대로 등장
+  function askNext(i) {
+    if (i >= questions.length) {
+      // 모든 답변 수집 → 프롬프트 반영 → 다음 단계
+      const piece = questions.map(q => `${q.key}: ${answers[q.key]}`).join(', ') + '.';
+      promptPieces.push({ text: piece, chunk: step.chunk });
+      updatePromptBar();
+      setTimeout(()=> nextStep(), 500);
+      return;
+    }
+    const q = questions[i];
+    setTimeout(()=>{
+      appendBubble('ai', q.q);
+      setTimeout(()=>{
+        const row = document.createElement('div');
+        row.className = 'input-block';
+        const inputRow = document.createElement('div');
+        inputRow.className = 'input-row';
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.className = 'text-input';
+        const btn = document.createElement('button');
+        btn.className = 'confirm-btn';
+        btn.textContent = '확인 →';
+        const go = () => {
+          const val = inp.value.trim();
+          if (!val) { inp.focus(); return; }
+          inp.disabled = true; btn.disabled = true;
+          answers[q.key] = val;
+          appendBubble('user', `<span class="${step.ck}">${val}</span>`);
+          askNext(i + 1);
+        };
+        btn.onclick = go;
+        inp.addEventListener('keydown', e=>{ if(e.key==='Enter') go(); });
+        inputRow.appendChild(inp); inputRow.appendChild(btn);
+        row.appendChild(inputRow);
+        chat.appendChild(row);
+        gsap.from(row,{opacity:0,y:10,duration:.3});
+        scrollToBottom();
+        setTimeout(()=> inp.focus(), 300);
+      }, 300);
+    }, 400);
+  }
+  askNext(0);
+}
+
+function renderInput(idx){
+  const step = STEPS[idx];
+  if (step.dynamicQ) { renderDynamicQ(idx); return; }
+  const block = document.createElement('div');
+  block.className = 'input-block';
+  block.id = `input-block-${idx}`;
+
+  /* 장르 선택 버튼 (다중 선택) */
+  if (step.options) {
+    const selected = new Set();
+    const optWrap = document.createElement('div');
+    optWrap.className = 'suggestion-list';
+    optWrap.style.marginBottom = '10px';
+    step.options.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.className = 'suggestion-btn';
+      btn.textContent = opt;
+      btn.onclick = () => {
+        if (selected.has(opt)) {
+          selected.delete(opt);
+          btn.style.background = '';
+          btn.style.borderColor = '';
+          btn.style.color = '';
+        } else {
+          selected.add(opt);
+          btn.style.background = 'rgba(124,58,237,.4)';
+          btn.style.borderColor = 'rgba(167,139,250,.8)';
+          btn.style.color = '#fff';
+        }
+        document.getElementById(`input-${idx}`).value = [...selected].join(', ');
+      };
+      optWrap.appendChild(btn);
+    });
+    block.appendChild(optWrap);
+  }
+
+  /* AI 검색 공간 */
+  if (step.askBox) {
+    const genrePiece = promptPieces.find(p => p.text.startsWith('장르:'));
+    const genre = genrePiece
+      ? genrePiece.text.replace('장르: ','').replace('.','')
+      : promptPieces[0]?.text.replace(' 게임을 HTML로 만들어줘.','') || '___';
+
+    const askWrap = document.createElement('div');
+    askWrap.style.cssText = 'background:rgba(124,58,237,.07);border:1px solid rgba(167,139,250,.2);border-radius:14px;padding:14px 16px;margin-bottom:12px;';
+
+    const searchRow = document.createElement('div');
+    searchRow.style.cssText = 'display:flex;gap:8px;align-items:center;';
+
+    const searchIcon = document.createElement('span');
+    searchIcon.textContent = '🤖';
+    searchIcon.style.fontSize = '18px';
+
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.className = 'text-input';
+    searchInput.value = step.askQ ? step.askQ(genre) : `${genre} 게임에 대해 알려줘.`;
+    searchInput.style.cssText = 'flex:1;padding:9px 13px;font-size:13px;border-color:rgba(167,139,250,.25);background:rgba(0,0,0,.2);';
+
+    const searchBtn = document.createElement('button');
+    searchBtn.className = 'confirm-btn';
+    searchBtn.textContent = '물어보기';
+    searchBtn.style.cssText = 'padding:9px 16px;font-size:13px;white-space:nowrap;';
+
+    const loadingEl = document.createElement('div');
+    loadingEl.style.cssText = 'display:none;margin-top:10px;font-size:12px;color:#94a3b8;padding:6px 0;';
+    loadingEl.innerHTML = '<span style="animation:blink 1s infinite">● </span>생각 중...';
+
+    const answerEl = document.createElement('div');
+    answerEl.style.cssText = 'display:none;margin-top:10px;padding:12px 14px;background:rgba(0,0,0,.25);border-radius:10px;font-size:13px;line-height:1.8;color:rgba(255,255,255,.85);white-space:pre-wrap;border-left:3px solid rgba(124,58,237,.5);';
+
+    searchBtn.onclick = async () => {
+      const q = searchInput.value.trim();
+      if (!q) return;
+      searchBtn.disabled = true;
+      searchBtn.textContent = '...';
+      loadingEl.style.display = 'block';
+      answerEl.style.display = 'none';
+      try {
+        const res = await fetch('https://api.upstage.ai/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+          body: JSON.stringify({
+            model: 'solar-pro',
+            max_tokens: 500,
+            messages: [{ role: 'user', content: q + ' 코드 없이, 초등학생도 이해할 수 있게 짧고 쉽게 설명해줘.' }]
+          })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+        const text = data.choices[0].message.content;
+        answerEl.textContent = text;
+        if (step.autoConfirm) {
+          promptPieces.push({text: step.buildPrompt(text), chunk: step.chunk});
+          updatePromptBar();
+          setTimeout(()=> nextStep(), 800);
+        } else {
+          const studentInput = document.getElementById(`input-${idx}`);
+          if (studentInput) {
+            studentInput.value = text;
+            gsap.from(studentInput, {borderColor:'rgba(167,139,250,.8)', duration:.6});
+          }
+        }
+      } catch(e) {
+        answerEl.textContent = '⚠ 오류: ' + e.message;
+      }
+      loadingEl.style.display = 'none';
+      answerEl.style.display = 'block';
+      gsap.from(answerEl, {opacity:0, y:6, duration:.3});
+      searchBtn.disabled = false;
+      searchBtn.textContent = '물어보기';
+      scrollToBottom();
+    };
+
+    searchInput.addEventListener('keydown', e=>{ if(e.key==='Enter') searchBtn.click(); });
+
+    searchRow.appendChild(searchIcon);
+    searchRow.appendChild(searchInput);
+    searchRow.appendChild(searchBtn);
+    askWrap.appendChild(searchRow);
+    askWrap.appendChild(loadingEl);
+    askWrap.appendChild(answerEl);
+    block.appendChild(askWrap);
+  }
+
+  const row = document.createElement('div');
+  row.className = 'input-row';
+
+  const input = step.askBox ? document.createElement('textarea') : document.createElement('input');
+  if (!step.askBox) input.type = 'text';
+  input.className = 'text-input';
+  input.id = `input-${idx}`;
+  if (step.askBox) { input.rows = 4; input.style.cssText = 'resize:vertical;line-height:1.7;font-size:13px;'; }
+  input.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey) { e.preventDefault(); confirm(idx); } });
+
+  const btn = document.createElement('button');
+  btn.className = 'confirm-btn';
+  btn.textContent = '확인 →';
+  btn.onclick = ()=> confirm(idx);
+
+  if (!step.autoConfirm) {
+    row.appendChild(input);
+    row.appendChild(btn);
+    block.appendChild(row);
+  }
+  chat.appendChild(block);
+  gsap.from(block,{opacity:0,y:10,duration:.3});
+  scrollToBottom();
+  if (!step.autoConfirm) setTimeout(()=> input.focus(), 350);
+}
+
+function confirm(idx){
+  if(idx !== currentStep) return;
+  const step = STEPS[idx];
+  const input = document.getElementById(`input-${idx}`);
+  const block = document.getElementById(`input-block-${idx}`);
+
+  const answer = input.value.trim();
+  if (!answer) { input.focus(); return; }
+
+  input.disabled = true;
+  block.querySelector('.confirm-btn').disabled = true;
+
+  appendBubble('user', `<span class="${step.ck}">${answer}</span>`);
+
+  promptPieces.push({text: step.buildPrompt(answer), chunk: step.chunk});
+  updatePromptBar();
+  setTimeout(()=> nextStep(), 500);
+}
+
+function updatePromptBar(){
+  const pct = Math.round((promptPieces.length / STEPS.length)*100);
+  document.getElementById('pct-bar').style.width = pct+'%';
+  document.getElementById('prompt-pct').textContent = pct+'%';
+  document.getElementById('prompt-step-label').textContent = `${promptPieces.length} / ${STEPS.length} 질문`;
+  const filled = promptPieces.filter(p=>p.text);
+  document.getElementById('prompt-display').innerHTML =
+    filled.map((p,i)=>
+      `<span class="chunk ${p.chunk}${i===filled.length-1?' chunk-new':''}">${p.text}</span>`
+    ).join(' ');
+}
+
+function scrollToBottom(){
+  setTimeout(()=>window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'}),100);
+}
+
+function showFinal(){
+  document.querySelector('.prompt-bar-label span:first-child').textContent = '✅ 완성 프롬프트!';
+  const sec = document.getElementById('final-section');
+  sec.style.display = 'block';
+  appendBubble('ai','<strong>완성!</strong> 🎉 이 프롬프트를 AI에 붙여넣고 대화를 이어가요!');
+
+  document.getElementById('prompt-display').innerHTML =
+    promptPieces.filter(p=>p.text).map(p=>`<span class="chunk ${p.chunk}">${p.text}</span>`).join(' ')
+    + ` <span class="chunk c0">${FIXED_CLOSE}</span>`;
+
+  setTimeout(()=>{
+    sec.innerHTML = buildFinal();
+    gsap.from(sec,{opacity:0,y:30,duration:.5});
+    scrollToBottom();
+    launchConfetti();
+  }, 800);
+}
+
+function buildFinal(){
+  const fullPrompt = [...promptPieces.map(p=>p.text).filter(Boolean), FIXED_CLOSE].join('\n');
+  return `
+  <div style="background:var(--s1);border:2px solid rgba(16,185,129,.3);border-radius:20px;padding:26px 30px;margin-bottom:80px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+      <div style="width:40px;height:40px;background:linear-gradient(135deg,var(--gr),#059669);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px">🏆</div>
+      <div>
+        <div style="font-size:clamp(17px,2.3vw,22px);font-weight:900">완성 프롬프트!</div>
+        <div style="font-size:12px;color:var(--mt)">AI에 그대로 붙여넣어봐요</div>
+      </div>
+    </div>
+    <div class="copy-box">
+      <pre id="final-prompt-text">${escapeHtml(fullPrompt)}</pre>
+    </div>
+    <div style="margin-top:16px">
+      <button id="copy-btn" class="btn btn-green" onclick="copyPrompt()">복사하기! →</button>
+    </div>
+  </div>`;
+}
+
+function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function copyPrompt(){
+  const el = document.getElementById('final-prompt-text');
+  navigator.clipboard.writeText(el.textContent).then(()=>{
+    const btn = document.getElementById('copy-btn');
+    btn.textContent='복사됨! ✓';
+    setTimeout(()=>{ btn.textContent='복사하기! →'; },2000);
+  });
+}
+
+function launchConfetti(){
+  const wrap = document.getElementById('confetti');
+  const colors=['#7c3aed','#ec4899','#06b6d4','#f59e0b','#10b981','#fff'];
+  for(let i=0;i<90;i++){
+    const el=document.createElement('div');
+    el.className='confetti-piece';
+    el.style.cssText=`left:${Math.random()*100}%;background:${colors[Math.floor(Math.random()*colors.length)]};width:${6+Math.random()*8}px;height:${6+Math.random()*8}px;border-radius:${Math.random()>.5?'50%':'2px'};animation-duration:${2+Math.random()*2}s;animation-delay:${Math.random()*.8}s;`;
+    wrap.appendChild(el);
+    setTimeout(()=>el.remove(),4000);
+  }
+}
+
+setTimeout(()=>{
+  appendBubble('user','게임 만들어줘! 🎮');
+  setTimeout(()=> nextStep(), 600);
+}, 500);
+</script>
+</body>
+</html>
