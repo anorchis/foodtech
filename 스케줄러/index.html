@@ -537,9 +537,10 @@ async function load() {
     const text = await res.text();
     const rows = parseCSV(text);
     // 헤더: team, member, week, slots, notes, updated
+    // 같은 멤버가 여러 행 있을 수 있으므로 아래로 내려갈수록 최신으로 덮어씀
     for (let i = 1; i < rows.length; i++) {
-      const [team, member, w, slotsStr, notes] = rows[i];
-      if (team === curTeam && w === WEEK_KEY) {
+      const [team, member, , slotsStr, notes] = rows[i];
+      if (team === curTeam && member) {
         let slots = {};
         try { slots = JSON.parse(slotsStr || '{}'); } catch(_) {}
         data[member] = { slots, notes: notes || '' };
