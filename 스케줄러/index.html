@@ -312,12 +312,7 @@ function getMonday(d) {
   x.setHours(0,0,0,0);
   return x;
 }
-function weekKey(mon) {
-  const y = mon.getFullYear();
-  const m = String(mon.getMonth()+1).padStart(2,'0');
-  const d = String(mon.getDate()).padStart(2,'0');
-  return `${y}-${m}-${d}`;
-}
+function weekKey(mon) { return mon.toISOString().slice(0,10); }
 function weekLabel(mon) {
   const end = new Date(mon);
   end.setDate(end.getDate() + 6);
