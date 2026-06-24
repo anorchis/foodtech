@@ -258,11 +258,6 @@
   <div class="chip-group" id="memberChips"></div>
 </div>
 
-<div class="week-row">
-  <button class="week-btn" onclick="changeWeek(-1)">◀</button>
-  <div class="week-label" id="weekLabel"></div>
-  <button class="week-btn" onclick="changeWeek(1)">▶</button>
-</div>
 
 <div class="legend" id="legend"></div>
 
@@ -299,33 +294,11 @@ for (let h = 9; h <= 21; h++) {
 
 let curTeam   = 'RGB';
 let curMember = null;
-let curMonday = getMonday(new Date());
-let data      = {};   // { 이름: { slots: {mon:[...], ...}, notes: '' } }
+let data      = {};
 let saveTimer = null;
 let pollTimer = null;
 
-/* ── 날짜 유틸 ── */
-function getMonday(d) {
-  const x = new Date(d);
-  const day = x.getDay();
-  x.setDate(x.getDate() - (day === 0 ? 6 : day - 1));
-  x.setHours(0,0,0,0);
-  return x;
-}
-function weekKey(mon) { return mon.toISOString().slice(0,10); }
-function weekLabel(mon) {
-  const end = new Date(mon);
-  end.setDate(end.getDate() + 6);
-  const f = d => `${d.getMonth()+1}/${d.getDate()}`;
-  return `${mon.getFullYear()}년  ${f(mon)} ~ ${f(end)}`;
-}
-
-function changeWeek(dir) {
-  curMonday = getMonday(new Date(curMonday.getTime() + dir * 7 * 86400000));
-  document.getElementById('weekLabel').textContent = weekLabel(curMonday);
-  data = {};
-  load();
-}
+const WEEK_KEY = 'fixed';
 
 /* ── 데이터 접근 ── */
 function isOn(name, day, time) {
@@ -518,7 +491,7 @@ async function save() {
     action: 'write',
     team: curTeam,
     member: curMember,
-    week: weekKey(curMonday),
+    week: WEEK_KEY,
     slots: JSON.stringify(md.slots),
     notes: md.notes || ''
   });
@@ -565,11 +538,10 @@ async function load() {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const text = await res.text();
     const rows = parseCSV(text);
-    const week = weekKey(curMonday);
     // 헤더: team, member, week, slots, notes, updated
     for (let i = 1; i < rows.length; i++) {
       const [team, member, w, slotsStr, notes] = rows[i];
-      if (team === curTeam && w === week) {
+      if (team === curTeam && w === WEEK_KEY) {
         let slots = {};
         try { slots = JSON.parse(slotsStr || '{}'); } catch(_) {}
         data[member] = { slots, notes: notes || '' };
@@ -591,7 +563,6 @@ function startPoll() {
 }
 
 /* ── 초기화 ── */
-document.getElementById('weekLabel').textContent = weekLabel(curMonday);
 renderTeams();
 renderMembers();
 renderLegend();
