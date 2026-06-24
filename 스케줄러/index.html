@@ -503,11 +503,14 @@ async function save() {
     notes: md.notes || ''
   });
   try {
-    await fetch(`${API_URL}?${params}`, { redirect: 'follow' });
+    const res = await fetch(`${API_URL}?${params}`, { redirect: 'follow' });
+    const json = await res.json();
+    if (json.error) throw new Error(json.error);
     const t = new Date().toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit' });
     setStatus(`✓ ${t} 저장됨`);
   } catch(e) {
-    setStatus('⚠ 저장 실패');
+    setStatus('⚠ 저장 실패: ' + e.message);
+    console.error('save error', e);
   }
   saveTimer = null;
 }
@@ -528,10 +531,15 @@ async function load() {
   try {
     const res = await fetch(`${API_URL}?${params}`, { redirect: 'follow' });
     const arr = await res.json();
+    if (arr.error) throw new Error(arr.error);
     arr.forEach(item => {
       data[item.member] = { slots: item.slots || {}, notes: item.notes || '' };
     });
-  } catch(e) { /* 네트워크 오류 무시 */ }
+    setStatus('');
+  } catch(e) {
+    setStatus('⚠ 불러오기 실패: ' + e.message);
+    console.error('load error', e);
+  }
   renderGrid();
   renderNotes();
 }
